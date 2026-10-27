@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import NotFound from './pages/NotFound'
+import OAuthCallback from './pages/OAuthCallback'
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             }
           />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/oauth/callback" element={<OAuthCallback />} />
           <Route
             path="/dashboard"
             element={
