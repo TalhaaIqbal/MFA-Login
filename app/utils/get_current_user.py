@@ -1,4 +1,5 @@
 from typing import Annotated
+import asyncio
 
 from fastapi import Depends, HTTPException, status, Request
 from logging_config import logger
@@ -21,13 +22,20 @@ async def get_current_user(
     if not session_id:
         raise _unauthorized("Session not found")
 
-    # Verify session and get user data
-    user_data = await verify_session(session_id)
-
-    if not user_data:
-        raise _unauthorized("Invalid or expired session")
-
-    return user_data
+    # Verify session and get user data with retry logic
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            user_data = await verify_session(session_id)
+            if not user_data:
+                raise _unauthorized("Invalid or expired session")
+            return user_data
+        except Exception as e:
+            if attempt == max_retries - 1:
+                logger.error(f"Failed to verify session after {max_retries} attempts: {e}")
+                raise _unauthorized("Session verification failed")
+            logger.warning(f"Session verification attempt {attempt + 1} failed, retrying...")
+            await asyncio.sleep(0.1 * (attempt + 1))  # Exponential backoff
 
 
 def _forbidden(detail: str = "Access forbidden.") -> HTTPException:

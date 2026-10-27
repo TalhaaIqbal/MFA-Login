@@ -61,8 +61,11 @@ async def verify_session(session_id: str) -> dict | None:
         sessions_collection = DBCollection.AUTH_SESSIONS(db_conn)
         users_collection = DBCollection.USERS(db_conn)
 
-        # Find session
-        session = await sessions_collection.find_one({"session_id": session_id})
+        # Find session with projection to reduce data transfer
+        session = await sessions_collection.find_one(
+            {"session_id": session_id},
+            {"_id": 0, "user_id": 1, "expires_at": 1, "revoked": 1}
+        )
 
         if not session:
             logger.warning(f"Session not found: {session_id}")
@@ -88,7 +91,7 @@ async def verify_session(session_id: str) -> dict | None:
             logger.warning(f"Session has no expiration: {session_id}")
             return None
 
-        # Get user data
+        # Get user data with projection
         user_id = session.get("user_id")
         user_doc = await users_collection.find_one(
             {"_id": user_id},

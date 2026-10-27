@@ -3,8 +3,10 @@ from fastapi import HTTPException
 
 async def extract_user_info(provider: str, client, token):
     if provider == "google":
-        info = token.get("userinfo") or {}
-        if info and not info.get("email_verified", True):
+        # Fetch userinfo from Google's endpoint
+        userinfo = await client.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
+        info = userinfo.json()
+        if not info.get("email_verified", True):
             raise HTTPException(status_code=400, detail="Google email not verified")
         email, name, provider_id = info.get("email"), info.get("name"), info.get("sub")
 
