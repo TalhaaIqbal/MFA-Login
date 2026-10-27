@@ -52,14 +52,18 @@ async def enable_2fa(user_id: str, code: str, challenge_id: str = None):
         # Decrypt the secret before verification
         try:
             decrypted_secret = decrypt_data(challenge_data["challenge_data"])
-        except ValueError:
+            logger.info(f"Decrypted secret length: {len(decrypted_secret)} for user ID: {user_id}")
+        except ValueError as e:
+            logger.error(f"Failed to decrypt 2FA secret for user ID: {user_id}: {e}")
             return await core_response(
                 status_code=500,
                 message="Failed to decrypt 2FA secret"
             )
 
         # Verify the code
+        logger.info(f"Verifying TOTP code for user ID: {user_id}, code: {code}")
         if not verify_totp_code(decrypted_secret, code):
+            logger.warning(f"Invalid 2FA code for user ID: {user_id}")
             return await core_response(
                 status_code=400,
                 message="Invalid verification code"

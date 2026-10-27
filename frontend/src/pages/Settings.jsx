@@ -74,7 +74,10 @@ function Settings() {
     setLoading(true)
 
     try {
-      await api.post('/auth/2fa/enable', { code: verificationCode })
+      await api.post('/auth/2fa/enable', {
+        code: verificationCode,
+        challenge_id: qrCodeData.challenge_id
+      })
       setSuccess('2FA enabled successfully!')
       setIs2FAEnabled(true)
       setShowQRCode(false)

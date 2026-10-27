@@ -36,13 +36,16 @@ async def verify_2fa_login(temp_token: str, code: str):
         # Decrypt the 2FA secret for verification
         try:
             decrypted_secret = decrypt_data(user["_2fa_secret"])
-        except ValueError:
+            logger.info(f"Decrypted secret length: {len(decrypted_secret)} for user ID: {user_id}")
+        except ValueError as e:
+            logger.error(f"Failed to decrypt 2FA secret for user ID: {user_id}: {e}")
             return await core_response(
                 status_code=500,
                 message="Failed to decrypt 2FA secret"
             )
 
         # Verify TOTP code
+        logger.info(f"Verifying TOTP code for user ID: {user_id}, code: {code}")
         if not verify_totp_code(decrypted_secret, code):
             logger.warning(f"Invalid 2FA code for user ID: {user_id}")
             return await core_response(

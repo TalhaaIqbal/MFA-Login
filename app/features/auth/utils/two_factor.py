@@ -33,7 +33,10 @@ def verify_totp_code(secret: str, code: str) -> bool:
     """Verify if the TOTP code is valid"""
     try:
         totp = pyotp.TOTP(secret)
-        return totp.verify(code, valid_window=1)  # Allow 1 step window for clock drift
+        # Allow wider window (3 steps = 90 seconds) to handle clock drift
+        result = totp.verify(code, valid_window=3)
+        logger.info(f"TOTP verification result: {result}, code: {code}, secret length: {len(secret)}")
+        return result
     except Exception as e:
         logger.error(f"Error verifying TOTP code: {e}")
         return False
