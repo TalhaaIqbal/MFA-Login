@@ -7,7 +7,7 @@ MfaMethod = Literal["totp", "email", "recovery"]
 
 
 class MfaVerifyRequest(BaseModel):
-    method: MfaMethod
+    method: Optional[MfaMethod] = None
     code: str = Field(..., min_length=1, max_length=64)
 
 
