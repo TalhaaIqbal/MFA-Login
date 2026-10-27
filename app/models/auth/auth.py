@@ -106,3 +106,7 @@ class ReauthRequest(BaseModel):
         if not v and not info.data.get("password"):
             raise ValueError("Either password or mfa_code must be provided")
         return v
+
+
+class SetSessionCookieRequest(BaseModel):
+    session_id: str = Field(..., min_length=1)

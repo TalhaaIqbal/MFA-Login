@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Response
 
-from models.auth.auth import LoginRequest, RegisterRequest
+from models.auth.auth import LoginRequest, RegisterRequest, SetSessionCookieRequest
 from models.auth.mfa import TotpEnableRequest, DisableMfaRequest, MfaVerifyRequest, EmailOtpEnableRequest, DisableEmailOtpRequest, EmailOtpVerifyRequest
 from features.auth.v1.authentication import login_api, signup_api
 from features.auth.v1.two_factor import disable_2fa_api, enable_2fa_api, setup_2fa_api, verify_2fa_api
@@ -114,3 +114,11 @@ async def oauth_login(provider: str, request: Request):
 @limiter.limit("30/minute")
 async def oauth_callback(provider: str, request: Request):
     return await oauth_callback_api(provider, request)
+
+
+@router.post("/set-session-cookie")
+@limiter.limit("30/minute")
+async def set_session_cookie_route(request: Request, payload: SetSessionCookieRequest):
+    from utils.cookies import set_session_cookie
+    response = Response(content='{"success": true}', media_type="application/json")
+    return set_session_cookie(response, payload.session_id)

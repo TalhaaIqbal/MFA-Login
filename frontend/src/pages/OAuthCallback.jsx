@@ -1,16 +1,29 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Helmet } from 'react-helmet-async'
+import api from '../utils/api'
 
 function OAuthCallback() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { refreshUser } = useAuth()
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
       try {
-        // The cookie should already be set by the backend redirect
+        // Check if session_id is in query params (for cross-domain OAuth)
+        const sessionId = searchParams.get('session_id')
+
+        if (sessionId) {
+          // Store session_id as cookie via backend endpoint
+          await api.post('/auth/set-session-cookie', { session_id: sessionId })
+          // Remove session_id from URL to prevent it from staying in history
+          searchParams.delete('session_id')
+          setSearchParams(searchParams)
+        }
+
         // Call /auth/me to verify the session and get user data
         await refreshUser()
         // If successful, redirect to dashboard
@@ -23,7 +36,7 @@ function OAuthCallback() {
     }
 
     handleOAuthCallback()
-  }, [navigate, refreshUser])
+  }, [navigate, refreshUser, searchParams, setSearchParams])
 
   return (
     <>
