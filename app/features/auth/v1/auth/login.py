@@ -63,15 +63,10 @@ async def login(payload: LoginRequest):
             otp = generate_otp()
             await send_email_otp(user.get("email"), otp)
 
-            # Store OTP in user document with expiration
+            # Store OTP in user document
             await users_collection.update_one(
                 {"_id": user.get("_id")},
-                {
-                    "$set": {
-                        "email_otp": otp,
-                        "email_otp_expires": int(time()) + 600  # 10 minutes
-                    }
-                }
+                {"$set": {"email_otp": otp}}
             )
 
             # Create JWT token for email OTP verification

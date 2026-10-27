@@ -5,10 +5,9 @@ from features.auth.utils.two_factor import verify_totp_code
 from utils.encryption import decrypt_data
 from bson import ObjectId
 from logging_config import logger
-from time import time
 
 
-async def enable_2fa(user_id: str, code: str, challenge_id: str = None):
+async def enable_2fa(user_id: str, code: str):
     """Enable 2FA after verifying the code"""
     try:
         logger.info(f"enable_2fa called with user_id: {user_id}, code: {code}")
@@ -17,11 +16,11 @@ async def enable_2fa(user_id: str, code: str, challenge_id: str = None):
         users_collection = DBCollection.USERS(db_conn)
 
         user = await users_collection.find_one({"_id": ObjectId(user_id)})
-        if not user:
-            logger.warning(f"User not found: {user_id}")
+        if not user or "_2fa_secret" not in user:
+            logger.warning(f"2FA not setup for user: {user_id}")
             return await core_response(
-                status_code=404,
-                message="User not found"
+                status_code=400,
+                message="2FA not setup. Please setup 2FA first."
             )
 
         # Guard check: if 2FA is already enabled
@@ -32,32 +31,9 @@ async def enable_2fa(user_id: str, code: str, challenge_id: str = None):
                 message="2FA is already enabled"
             )
 
-        # Get the pending secret from user document
-        encrypted_secret = user.get("_2fa_secret_pending")
-        secret_expires = user.get("_2fa_secret_pending_expires")
-
-        if not encrypted_secret:
-            logger.warning(f"No pending 2FA secret for user: {user_id}")
-            return await core_response(
-                status_code=400,
-                message="No pending 2FA setup. Please setup 2FA again."
-            )
-
-        # Check if secret has expired
-        if secret_expires and int(time()) > secret_expires:
-            logger.warning(f"Pending 2FA secret expired for user: {user_id}")
-            await users_collection.update_one(
-                {"_id": ObjectId(user_id)},
-                {"$unset": {"_2fa_secret_pending": "", "_2fa_secret_pending_expires": ""}}
-            )
-            return await core_response(
-                status_code=400,
-                message="Setup expired. Please setup 2FA again."
-            )
-
         # Decrypt the secret before verification
         try:
-            decrypted_secret = decrypt_data(encrypted_secret)
+            decrypted_secret = decrypt_data(user["_2fa_secret"])
             logger.info(f"Decrypted secret length: {len(decrypted_secret)} for user ID: {user_id}")
         except ValueError as e:
             logger.error(f"Failed to decrypt 2FA secret for user ID: {user_id}: {e}")
@@ -75,20 +51,10 @@ async def enable_2fa(user_id: str, code: str, challenge_id: str = None):
                 message="Invalid verification code"
             )
 
-        logger.info(f"TOTP code verified, enabling 2FA")
-        # Move pending secret to permanent secret and enable 2FA
+        # Enable 2FA
         result = await users_collection.update_one(
             {"_id": ObjectId(user_id)},
-            {
-                "$set": {
-                    "is_2fa_enabled": True,
-                    "_2fa_secret": encrypted_secret
-                },
-                "$unset": {
-                    "_2fa_secret_pending": "",
-                    "_2fa_secret_pending_expires": ""
-                }
-            }
+            {"$set": {"is_2fa_enabled": True}}
         )
 
         if result.modified_count == 0:

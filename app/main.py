@@ -16,13 +16,14 @@ from config import ENABLE_DOCS, SESSION_SECRET, COOKIE_SECURE, COOKIE_SAMESITE
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    await init_db()
     # Initialize OAuth
     init_oauth(app)
 
     yield
 
     # Shutdown
-    # No-op - connections are per-request
+    await close_db_conn()
 
 
 app = FastAPI(
