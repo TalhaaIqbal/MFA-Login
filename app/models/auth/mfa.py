@@ -46,22 +46,3 @@ class EmailOtpVerifyRequest(BaseModel):
     """Verify email OTP during login."""
 
     code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
-
-
-# ── Response models ────────────────────────────────────────────────────────────
-
-class TotpSetupResponse(BaseModel):
-    """Returned when a TOTP setup is initiated.
-
-    *uri* is the ``otpauth://`` URI for QR-code generation.
-    *secret* is the base-32 manual-entry secret (shown once; store it securely).
-    """
-
-    uri: str
-    secret: str
-
-
-class RecoveryCodesResponse(BaseModel):
-    """Plain-text recovery codes, shown **once** at generation time."""
-
-    codes: List[str] = Field(..., min_length=1)
