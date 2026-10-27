@@ -59,7 +59,7 @@ async def enable_2fa(request: Request, payload: TotpEnableRequest, current_user:
 @router.post("/2fa/disable")
 @limiter.limit("10/minute")
 async def disable_2fa(request: Request, payload: DisableMfaRequest, current_user: dict = Depends(get_current_user)):
-    return await disable_2fa_api(current_user["id"], None, payload.code)
+    return await disable_2fa_api(current_user["id"], payload.password, payload.totp_code)
 
 
 @router.post("/2fa/verify")

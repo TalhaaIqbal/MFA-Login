@@ -28,12 +28,11 @@ class EmailOtpEnableRequest(BaseModel):
 class DisableMfaRequest(BaseModel):
     """Turn off a specific MFA factor.
 
-    *code* must be a valid credential for the factor being disabled (e.g. a TOTP
-    code when disabling TOTP, or an email OTP when disabling email MFA).
+    Provide either password or totp_code for authentication.
     """
 
-    method: MfaMethod
-    code: str = Field(..., min_length=1, max_length=64)
+    password: Optional[str] = None
+    totp_code: Optional[str] = None
 
 
 class DisableEmailOtpRequest(BaseModel):

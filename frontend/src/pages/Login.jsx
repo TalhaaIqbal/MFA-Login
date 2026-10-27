@@ -229,7 +229,7 @@ function Login() {
                 className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all text-gray-800 placeholder-gray-400 text-center text-lg tracking-widest"
               />
               <p className="text-xs text-gray-500 mt-2 text-center">
-                Enter the code from your authenticator app
+                Enter the code from your authenticator app or gmail
               </p>
             </div>
 
