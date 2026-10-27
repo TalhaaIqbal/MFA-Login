@@ -85,10 +85,17 @@ async def enable_2fa(user_id: str, code: str, challenge_id: str = None):
 
         logger.info(f"Challenge consumed, updating user document")
         # Store the secret in user document and enable 2FA
-        await users_collection.update_one(
+        result = await users_collection.update_one(
             {"_id": ObjectId(user_id)},
             {"$set": {"is_2fa_enabled": True, "_2fa_secret": challenge_data["challenge_data"]}}
         )
+
+        if result.modified_count == 0:
+            logger.warning(f"No document modified for user ID: {user_id}")
+            return await core_response(
+                status_code=500,
+                message="Failed to update user document"
+            )
 
         logger.info(f"2FA enabled successfully for user ID: {user_id}")
         return await core_response(
