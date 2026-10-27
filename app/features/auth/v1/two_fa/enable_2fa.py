@@ -7,7 +7,7 @@ from bson import ObjectId
 from logging_config import logger
 
 
-async def enable_2fa(user_id: str, code: str):
+async def enable_2fa(user_id: str, code: str, challenge_id: str = None):
     """Enable 2FA after verifying the code"""
     try:
         logger.info(f"enable_2fa called with user_id: {user_id}, code: {code}")
