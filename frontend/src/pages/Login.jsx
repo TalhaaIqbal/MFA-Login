@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import api from '../utils/api'
@@ -9,12 +9,29 @@ function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [searchParams] = useSearchParams()
-  const [error, setError] = useState(searchParams.get('error') ? 'Social sign-in failed. Please try again.' : '')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [show2FAInput, setShow2FAInput] = useState(false)
   const [twoFactorCode, setTwoFactorCode] = useState('')
   const navigate = useNavigate()
   const { login, pending2FA, setPending2FAData, clearPending2FA, verify2FA } = useAuth()
+
+  // Check for pending 2FA from OAuth or page refresh
+  useEffect(() => {
+    const pending = sessionStorage.getItem('pending2FA')
+    if (pending) {
+      const { tempToken, userId, method } = JSON.parse(pending)
+      setPending2FAData(tempToken, userId, method)
+      setShow2FAInput(true)
+    }
+  }, [setPending2FAData])
+
+  // Also check if pending2FA is already set in context
+  useEffect(() => {
+    if (pending2FA) {
+      setShow2FAInput(true)
+    }
+  }, [pending2FA])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
