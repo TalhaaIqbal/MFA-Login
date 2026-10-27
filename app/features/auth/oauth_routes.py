@@ -23,7 +23,7 @@ async def oauth_login(provider: str, request: Request):
         if not client:
             raise HTTPException(status_code=400, detail=f"{provider} not configured")
 
-        return await client.authorize_redirect(request, f"/auth/oauth/{provider}/callback")
+        return await client.authorize_redirect(request)
     except Exception as e:
         logger.error(f"OAuth login error for {provider}: {e}")
         raise HTTPException(status_code=500, detail="OAuth login failed")
