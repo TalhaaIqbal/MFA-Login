@@ -1,0 +1,18 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+passlib[argon2]
+pymongo
+certifi
+requests
+pydantic[email]
+slowapi
+pyjwt
+pyotp
+qrcode[pil]
+cryptography
+
+# tests
+pytest
+pytest-asyncio
+pytest-cov
