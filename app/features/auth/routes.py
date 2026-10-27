@@ -5,7 +5,7 @@ from models.auth.mfa import TotpEnableRequest, DisableMfaRequest, MfaVerifyReque
 from features.auth.v1.authentication import login_api, signup_api
 from features.auth.v1.two_factor import disable_2fa_api, enable_2fa_api, setup_2fa_api, verify_2fa_api
 from features.auth.v1.auth.logout import logout_api
-from features.auth.oauth_routes import router as oauth_router
+from features.auth.v1.oauth_apis import oauth_login_api, oauth_callback_api
 from middlewares.limiter import limiter
 from utils.get_current_user import get_current_user
 from utils.core_response import core_response
@@ -70,5 +70,14 @@ async def verify_2fa(request: Request, payload: MfaVerifyRequest):
         )
     return await verify_2fa_api(temp_token, payload.code)
 
-# Include OAuth routes
-router.include_router(oauth_router)
+
+@router.get("/oauth/{provider}")
+@limiter.limit("30/minute")
+async def oauth_login(provider: str, request: Request):
+    return await oauth_login_api(provider, request)
+
+
+@router.get("/oauth/{provider}/callback")
+@limiter.limit("30/minute")
+async def oauth_callback(provider: str, request: Request):
+    return await oauth_callback_api(provider, request)

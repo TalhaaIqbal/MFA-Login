@@ -6,7 +6,7 @@ from middlewares.cors import add_cors_middleware
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 from middlewares.limiter import add_slowapi_middleware, limiter
-from features.auth.oauth_service import oauth, init_oauth
+from utils.oauth import oauth, init_oauth
 
 from routers.routers import api_router
 from config import ENABLE_DOCS

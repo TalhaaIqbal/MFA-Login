@@ -43,4 +43,3 @@ def init_oauth(app):
             client_kwargs={'scope': 'openid email profile'},
             redirect_uri=MICROSOFT_REDIRECT_URI
         )
-

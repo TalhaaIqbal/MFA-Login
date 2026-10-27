@@ -48,6 +48,9 @@ CORS_ORIGINS: list[str] = environ.get("CORS_ORIGINS", "").split(",") if environ.
 # Environment Configuration
 ENVIRONMENT: str = environ.get("ENVIRONMENT", "local").lower()  # 'local' or 'production'
 
+# Frontend URL for OAuth redirects
+FRONTEND_URL: str = environ.get("FRONTEND_URL", "http://localhost:5173")
+
 # Cookie Configuration
 # Automatically configured based on ENVIRONMENT
 if ENVIRONMENT == "production":
