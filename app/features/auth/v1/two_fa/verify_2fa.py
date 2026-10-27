@@ -7,7 +7,7 @@ from utils.encryption import decrypt_data
 from utils.session_manager import create_session
 from bson import ObjectId
 from logging_config import logger
-from config import COOKIE_SECURE, COOKIE_SAMESITE, COOKIE_DOMAIN
+from config import COOKIE_SECURE, COOKIE_SAMESITE, COOKIE_DOMAIN, COOKIE_PARTITIONED
 import hashlib
 
 
@@ -78,8 +78,10 @@ async def verify_2fa_login(temp_token: str, code: str):
             "secure": COOKIE_SECURE,
             "samesite": COOKIE_SAMESITE,
             "path": "/",  # Important: set path explicitly
-            "max_age": 1800  # 30 minutes
+            "max_age": 604800  # 7 days
         }
+        if COOKIE_PARTITIONED:
+            cookie_kwargs["partitioned"] = True
         if COOKIE_DOMAIN:
             cookie_kwargs["domain"] = COOKIE_DOMAIN
 

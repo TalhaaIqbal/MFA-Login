@@ -8,7 +8,7 @@ from models.auth.auth import RegisterRequest
 from features.auth.utils.hash_password import hash_password
 from utils.session_manager import create_session
 from utils.core_response import core_response
-from config import COOKIE_SECURE, COOKIE_SAMESITE, COOKIE_DOMAIN
+from config import COOKIE_SECURE, COOKIE_SAMESITE, COOKIE_DOMAIN, COOKIE_PARTITIONED
 
 
 async def signup(payload: RegisterRequest):
@@ -72,6 +72,8 @@ async def signup(payload: RegisterRequest):
             "path": "/",
             "max_age": 604800  # 7 days
         }
+        if COOKIE_PARTITIONED:
+            cookie_kwargs["partitioned"] = True
         if COOKIE_DOMAIN:
             cookie_kwargs["domain"] = COOKIE_DOMAIN
 

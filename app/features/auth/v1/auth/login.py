@@ -7,7 +7,7 @@ from db.collection import DBCollection
 from features.auth.utils.verify_password import verify_password
 from utils.encryption import encrypt_data
 from utils.session_manager import create_session
-from config import COOKIE_SECURE, COOKIE_SAMESITE, COOKIE_DOMAIN
+from config import COOKIE_SECURE, COOKIE_SAMESITE, COOKIE_DOMAIN, COOKIE_PARTITIONED
 import secrets
 import hashlib
 
@@ -94,8 +94,10 @@ async def login(payload: LoginRequest):
             "secure": COOKIE_SECURE,
             "samesite": COOKIE_SAMESITE,
             "path": "/",  # Important: set path explicitly
-            "max_age": 604800  # 7 days
+            "max_age": 604800,  # 7 days
         }
+        if COOKIE_PARTITIONED:
+            cookie_kwargs["partitioned"] = True
         if COOKIE_DOMAIN:
             cookie_kwargs["domain"] = COOKIE_DOMAIN
 

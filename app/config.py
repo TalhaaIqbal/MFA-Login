@@ -31,11 +31,22 @@ ENABLE_DOCS: bool = environ.get("ENABLE_DOCS", "false").lower() == "true"
 # CORS Configuration
 CORS_ORIGINS: list[str] = environ.get("CORS_ORIGINS", "").split(",") if environ.get("CORS_ORIGINS") else []
 
+# Environment Configuration
+ENVIRONMENT: str = environ.get("ENVIRONMENT", "local").lower()  # 'local' or 'production'
+
 # Cookie Configuration
-# For cross-origin requests, use SameSite=None with Secure=true
-# For same-origin, use SameSite=lax
-COOKIE_SECURE: bool = environ.get("COOKIE_SECURE", "true").lower() == "true"
-COOKIE_SAMESITE: str = environ.get("COOKIE_SAMESITE", "none")  # Changed to 'none' for cross-origin
+# Automatically configured based on ENVIRONMENT
+if ENVIRONMENT == "production":
+    COOKIE_SECURE: bool = True
+    COOKIE_SAMESITE: str = "none"
+    COOKIE_PARTITIONED: bool = True
+else:
+    # For local development with different ports, use 'none' to allow cross-origin cookies
+    # Note: This may show browser warnings but works for HTTP on localhost
+    COOKIE_SECURE: bool = False
+    COOKIE_SAMESITE: str = "none"
+    COOKIE_PARTITIONED: bool = False
+
 COOKIE_DOMAIN: str = environ.get("COOKIE_DOMAIN", "")  # Optional: set cookie domain (e.g., .example.com for subdomain sharing)
 # Note: partitioned=True requires Python 3.14+ (not supported on Vercel yet)
 # Cookie warnings will appear in console but functionality works

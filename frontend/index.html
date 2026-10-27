@@ -21,17 +21,17 @@
 
     <!-- Content Security Policy -->
     <!-- LOCAL DEVELOPMENT - Uncomment this line for local development -->
-    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: https://*.vercel.app; connect-src 'self' https://*.vercel.app https://*.ngrok-free.dev http://localhost:* http://127.0.0.1:*; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self';" /> -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: https://*.vercel.app; connect-src 'self' https://*.vercel.app https://*.ngrok-free.dev http://localhost:* http://127.0.0.1:*; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self';" />
 
     <!-- PRODUCTION - Uncomment this line for production -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'nonce-%VITE_CSP_NONCE%'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: https://*.vercel.app; connect-src 'self' https://*.vercel.app https://*.ngrok-free.dev; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self';" />
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'nonce-%VITE_CSP_NONCE%'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: https://*.vercel.app; connect-src 'self' https://*.vercel.app https://*.ngrok-free.dev; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self';" /> -->
  </head>
   <body>
     <div id="root"></div>
     <!-- LOCAL DEVELOPMENT -->
-    <!-- <script type="module" src="/src/main.jsx"></script> -->
+    <script type="module" src="/src/main.jsx"></script>
 
     <!-- PRODUCTION - Uncomment this line for production -->
-    <script type="module" src="/src/main.jsx" nonce="%VITE_CSP_NONCE%"></script>
+    <!-- <script type="module" src="/src/main.jsx" nonce="%VITE_CSP_NONCE%"></script> -->
   </body>
 </html>
