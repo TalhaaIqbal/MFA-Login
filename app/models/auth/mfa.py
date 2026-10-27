@@ -17,6 +17,12 @@ class TotpEnableRequest(BaseModel):
     code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
 
 
+class EmailOtpEnableRequest(BaseModel):
+    """Confirm email OTP setup by supplying the 6-digit code sent to email."""
+
+    code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
 class DisableMfaRequest(BaseModel):
     """Turn off a specific MFA factor.
 
@@ -26,6 +32,18 @@ class DisableMfaRequest(BaseModel):
 
     method: MfaMethod
     code: str = Field(..., min_length=1, max_length=64)
+
+
+class DisableEmailOtpRequest(BaseModel):
+    """Turn off email OTP 2FA with password authentication."""
+
+    password: str = Field(..., min_length=1)
+
+
+class EmailOtpVerifyRequest(BaseModel):
+    """Verify email OTP during login."""
+
+    code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
 
 
 # ── Response models ────────────────────────────────────────────────────────────

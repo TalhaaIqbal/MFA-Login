@@ -35,6 +35,14 @@ MICROSOFT_CLIENT_SECRET: str = environ.get("MICORSOFT_CLIENT_SECRET", "")
 MICROSOFT_TENANT_ID: str = environ.get("MICROSOFT_TENANT_ID", "common")
 MICROSOFT_REDIRECT_URI: str = environ.get("MICROSOFT_AUTHORIZED_REDIRECT_URI", "")
 
+# Email Configuration
+SMTP_HOST: str = environ.get("SMTP_HOST", "")
+SMTP_PORT: int = int(environ.get("SMTP_PORT", "587"))
+SMTP_USER: str = environ.get("SMTP_USER", "")
+SMTP_PASSWORD: str = environ.get("SMTP_PASSWORD", "")
+SMTP_FROM_EMAIL: str = environ.get("SMTP_FROM_EMAIL", "")
+SMTP_FROM_NAME: str = environ.get("SMTP_FROM_NAME", "MFA Login")
+
 # Validate ENCRYPTION_KEY is a valid Fernet key (44 bytes base64)
 if ENCRYPTION_KEY and len(ENCRYPTION_KEY) != 44:
     raise ValueError("ENCRYPTION_KEY must be a 44-byte base64-encoded string (Fernet key)")

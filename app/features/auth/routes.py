@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Request, Depends
 
 from models.auth.auth import LoginRequest, RegisterRequest
-from models.auth.mfa import TotpEnableRequest, DisableMfaRequest, MfaVerifyRequest
+from models.auth.mfa import TotpEnableRequest, DisableMfaRequest, MfaVerifyRequest, EmailOtpEnableRequest, DisableEmailOtpRequest, EmailOtpVerifyRequest
 from features.auth.v1.authentication import login_api, signup_api
 from features.auth.v1.two_factor import disable_2fa_api, enable_2fa_api, setup_2fa_api, verify_2fa_api
 from features.auth.v1.auth.logout import logout_api
 from features.auth.v1.oauth_apis import oauth_login_api, oauth_callback_api
+from features.auth.v1.email_otp_apis import setup_email_otp_api, enable_email_otp_api, disable_email_otp_api, verify_email_otp_api
 from middlewares.limiter import limiter
 from utils.get_current_user import get_current_user
 from utils.core_response import core_response
@@ -69,6 +70,36 @@ async def verify_2fa(request: Request, payload: MfaVerifyRequest):
             message="Temporary token required"
         )
     return await verify_2fa_api(temp_token, payload.code)
+
+
+@router.post("/email-otp/setup")
+@limiter.limit("10/minute")
+async def setup_email_otp(request: Request, current_user: dict = Depends(get_current_user)):
+    return await setup_email_otp_api(current_user["id"], current_user["email"])
+
+
+@router.post("/email-otp/enable")
+@limiter.limit("10/minute")
+async def enable_email_otp(request: Request, payload: EmailOtpEnableRequest, current_user: dict = Depends(get_current_user)):
+    return await enable_email_otp_api(current_user["id"], payload.code)
+
+
+@router.post("/email-otp/disable")
+@limiter.limit("10/minute")
+async def disable_email_otp(request: Request, payload: DisableEmailOtpRequest, current_user: dict = Depends(get_current_user)):
+    return await disable_email_otp_api(current_user["id"], payload.password)
+
+
+@router.post("/email-otp/verify")
+@limiter.limit("10/minute")
+async def verify_email_otp(request: Request, payload: EmailOtpVerifyRequest):
+    temp_token = request.headers.get("X-Email-OTP-Token")
+    if not temp_token:
+        return await core_response(
+            status_code=400,
+            message="Temporary token required"
+        )
+    return await verify_email_otp_api(temp_token, payload.code)
 
 
 @router.get("/oauth/{provider}")

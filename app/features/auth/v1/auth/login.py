@@ -34,11 +34,12 @@ async def login(payload: LoginRequest):
                 message="Invalid email or password"
             )
 
-        # Check if 2FA is enabled
+        # Check if 2FA is enabled (TOTP or Email OTP)
         is_2fa_enabled = user.get("is_2fa_enabled", False)
+        is_email_otp_enabled = user.get("is_email_otp_enabled", False)
 
         if is_2fa_enabled:
-            # Generate temporary token for 2FA verification
+            # Generate temporary token for TOTP 2FA verification
             temp_token = secrets.token_urlsafe(32)
             temp_token_expires = int(time() * 1000) + (5 * 60 * 1000)  # 5 minutes
 
@@ -57,13 +58,53 @@ async def login(payload: LoginRequest):
                 }
             )
 
-            logger.info(f"2FA required for user ID: {user.get('_id')}")
+            logger.info(f"TOTP 2FA required for user ID: {user.get('_id')}")
 
             return await core_response(
                 status_code=200,
                 message="2FA verification required",
                 data={
                     "requires_2fa": True,
+                    "mfa_method": "totp",
+                    "temp_token": temp_token,
+                    "user_id": str(user.get("_id"))
+                }
+            )
+
+        if is_email_otp_enabled:
+            # Generate temporary token for email OTP verification
+            temp_token = secrets.token_urlsafe(32)
+            temp_token_expires = int(time() * 1000) + (10 * 60 * 1000)  # 10 minutes
+
+            # Hash temp token for efficient lookup
+            temp_token_hash = hashlib.sha256(temp_token.encode()).hexdigest()
+
+            # Generate and send email OTP
+            from utils.email_otp import generate_otp, send_email_otp
+            otp = generate_otp()
+            await send_email_otp(user.get("email"), otp)
+
+            # Store hash, temp token, and OTP in user document
+            await users_collection.update_one(
+                {"_id": user["_id"]},
+                {
+                    "$set": {
+                        "_email_otp_temp_token_hash": temp_token_hash,
+                        "_email_otp_temp_token": encrypt_data(temp_token),
+                        "_email_otp_temp_token_expires": temp_token_expires,
+                        "_email_otp_temp": otp
+                    }
+                }
+            )
+
+            logger.info(f"Email OTP required for user ID: {user.get('_id')}")
+
+            return await core_response(
+                status_code=200,
+                message="Email OTP verification required",
+                data={
+                    "requires_2fa": True,
+                    "mfa_method": "email",
                     "temp_token": temp_token,
                     "user_id": str(user.get("_id"))
                 }
