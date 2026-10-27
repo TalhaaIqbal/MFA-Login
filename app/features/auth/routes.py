@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Request, Depends
 
-from models.auth.auth import LoginRequest
+from models.auth.auth import LoginRequest, RegisterRequest
 from models.auth.mfa import TotpEnableRequest, DisableMfaRequest, MfaVerifyRequest
-from features.auth.v1.authentication import login_api
+from features.auth.v1.authentication import login_api, signup_api
 from features.auth.v1.two_factor import disable_2fa_api, enable_2fa_api, setup_2fa_api, verify_2fa_api
 from features.auth.v1.auth.logout import logout_api
 from middlewares.limiter import limiter
@@ -18,11 +18,10 @@ async def auth(request: Request, payload: LoginRequest):
     return await login_api(payload)
 
 
-# @router.post("/signup")
-# @limiter.limit("30/minute")
-# async def signup_route(request: Request, payload: UserRegister):
-#     return await signup_api(payload)
-# Signup disabled - MCP tools are admin-only
+@router.post("/signup")
+@limiter.limit("30/minute")
+async def signup_route(request: Request, payload: RegisterRequest):
+    return await signup_api(payload)
 
 
 @router.get("/me")

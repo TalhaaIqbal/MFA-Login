@@ -94,7 +94,7 @@ async def login(payload: LoginRequest):
             "secure": COOKIE_SECURE,
             "samesite": COOKIE_SAMESITE,
             "path": "/",  # Important: set path explicitly
-            "max_age": 1800  # 30 minutes
+            "max_age": 604800  # 7 days
         }
         if COOKIE_DOMAIN:
             cookie_kwargs["domain"] = COOKIE_DOMAIN

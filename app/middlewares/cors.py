@@ -17,8 +17,9 @@ def add_cors_middleware(app: FastAPI):
         CORSMiddleware,
         allow_origins=origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-        allow_headers=["Content-Type", "Authorization", "X-2FA-Token"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+        # allow_headers=["Content-Type", "Authorization", "X-2FA-Token"],
         expose_headers=["Content-Type", "Authorization"],
         max_age=600,
     )

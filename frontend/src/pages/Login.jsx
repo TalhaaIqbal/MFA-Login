@@ -202,6 +202,13 @@ function Login() {
         )}
 
         <div className="mt-6 text-center text-sm text-gray-500">
+          Don't have an account?{' '}
+          <Link to="/signup" className="text-emerald-600 hover:text-emerald-700 font-medium">
+            Sign up
+          </Link>
+        </div>
+
+        <div className="mt-4 text-center text-sm text-gray-500">
           <Link to="/privacy-policy" className="text-emerald-600 hover:text-emerald-700">
             Privacy Policy
           </Link>

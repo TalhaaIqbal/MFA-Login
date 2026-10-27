@@ -6,8 +6,8 @@ import re
 # ── Password strength validator ────────────────────────
 
 def _validate_password(v: str) -> str:
-    if len(v) < 12:
-        raise ValueError("Password must be at least 12 characters long")
+    if len(v) < 8:
+        raise ValueError("Password must be at least 8 characters long")
     if not re.search(r"[A-Z]", v):
         raise ValueError("Password must contain at least one uppercase letter")
     if not re.search(r"[a-z]", v):
@@ -29,11 +29,11 @@ def _validate_password(v: str) -> str:
 # ── Auth request models ────────────────────────────────────────────────────────
 
 class RegisterRequest(BaseModel):
-    """Sign-up payload: email, display name, and a strong password (≥ 12 chars)."""
+    """Sign-up payload: email, display name, and a strong password (≥ 8 chars)."""
 
     email: EmailStr
     name: str = Field(..., min_length=2, max_length=100)
-    password: str = Field(..., min_length=12, max_length=128)
+    password: str = Field(..., min_length=8, max_length=128)
 
     @field_validator("password")
     @classmethod
@@ -69,7 +69,7 @@ class PasswordResetConfirm(BaseModel):
     """Step 2 of password reset – supply the reset token and the new password."""
 
     token: str = Field(..., min_length=1)
-    new_password: str = Field(..., min_length=12, max_length=128)
+    new_password: str = Field(..., min_length=8, max_length=128)
 
     @field_validator("new_password")
     @classmethod
@@ -82,7 +82,7 @@ class ChangePasswordRequest(BaseModel):
     """Authenticated user changing their own password."""
 
     current_password: str
-    new_password: str = Field(..., min_length=12, max_length=128)
+    new_password: str = Field(..., min_length=8, max_length=128)
 
     @field_validator("new_password")
     @classmethod

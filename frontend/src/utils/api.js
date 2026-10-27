@@ -28,9 +28,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Unauthorized - clear user and redirect to login
-      localStorage.removeItem('user')
-      window.location.href = '/login'
+      // Only redirect if user was previously authenticated (session expired)
+      // Don't redirect for login attempts with invalid credentials
+      const user = localStorage.getItem('user')
+      if (user) {
+        localStorage.removeItem('user')
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

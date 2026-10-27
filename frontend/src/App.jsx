@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/route/ProtectedRoute'
 import PublicRoute from './components/route/PublicRoute'
 import Login from './pages/Login'
+import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
 import PrivacyPolicy from './pages/PrivacyPolicy'
@@ -17,6 +18,13 @@ function App() {
             element={
               <PublicRoute>
                 <Login />
+              </PublicRoute>
+            }
+          />
+          <Route path="/signup"
+            element={
+              <PublicRoute>
+                <Signup />
               </PublicRoute>
             }
           />

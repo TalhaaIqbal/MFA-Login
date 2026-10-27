@@ -28,7 +28,7 @@ async def create_session(user_id: str, expires_delta: timedelta | None = None) -
         if expires_delta:
             expires_at = datetime.now(timezone.utc) + expires_delta
         else:
-            expires_at = datetime.now(timezone.utc) + timedelta(minutes=30)
+            expires_at = datetime.now(timezone.utc) + timedelta(days=7)
 
         # Store session in database
         await sessions_collection.insert_one({
