@@ -8,8 +8,8 @@ async def setup_email_otp_api(user_id: str, email: str):
     return await setup_email_otp(user_id, email)
 
 
-async def enable_email_otp_api(user_id: str, code: str):
-    return await enable_email_otp(user_id, code)
+async def enable_email_otp_api(user_id: str, code: str, challenge_id: str = None):
+    return await enable_email_otp(user_id, code, challenge_id)
 
 
 async def disable_email_otp_api(user_id: str, password: str = None):

@@ -1,13 +1,12 @@
-from time import time
 from db.db import get_db_conn
 from db.collection import DBCollection
 from utils.core_response import core_response
 from utils.email_otp import verify_otp
 from utils.session_manager import create_session
+from utils.auth_challenges import verify_and_consume_challenge
 from bson import ObjectId
 from logging_config import logger
 from utils.cookies import set_session_cookie
-import hashlib
 
 
 async def verify_email_otp_login(temp_token: str, code: str):
@@ -16,37 +15,45 @@ async def verify_email_otp_login(temp_token: str, code: str):
         db_conn = await get_db_conn()
         users_collection = DBCollection.USERS(db_conn)
 
-        # Hash the temp token and find user directly using indexed hash field (O(1) lookup)
-        temp_token_hash = hashlib.sha256(temp_token.encode()).hexdigest()
-        user = await users_collection.find_one({
-            "_email_otp_temp_token_hash": temp_token_hash,
-            "_email_otp_temp_token_expires": {"$gt": int(time() * 1000)}
-        })
+        # Get challenge data first
+        from utils.auth_challenges import get_challenge_data
+        challenge_data = await get_challenge_data(temp_token, "email_otp_login")
 
-        if not user:
+        if not challenge_data:
             return await core_response(
                 status_code=400,
                 message="Invalid or expired temporary token"
             )
 
         # Verify email OTP code
-        if not verify_otp(user["_email_otp_temp"], code):
-            logger.warning(f"Invalid email OTP for user ID: {user.get('_id')}")
+        if not verify_otp(challenge_data["challenge_data"], code):
+            logger.warning(f"Invalid email OTP for user ID: {challenge_data['user_id']}")
             return await core_response(
                 status_code=400,
                 message="Invalid verification code"
             )
 
-        # Clear temp token and OTP
-        await users_collection.update_one(
-            {"_id": user["_id"]},
-            {"$unset": {"_email_otp_temp": 1, "_email_otp_temp_token": 1, "_email_otp_temp_token_hash": 1, "_email_otp_temp_token_expires": 1}}
-        )
+        # Consume the challenge
+        user_id = await verify_and_consume_challenge(temp_token, "email_otp_login", challenge_data["challenge_data"])
+
+        if not user_id:
+            return await core_response(
+                status_code=400,
+                message="Invalid or expired temporary token"
+            )
+
+        # Get user data
+        user = await users_collection.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            return await core_response(
+                status_code=404,
+                message="User not found"
+            )
 
         # Create session
-        session_id = await create_session(str(user.get("_id")))
+        session_id = await create_session(user_id)
 
-        logger.info(f"Email OTP verification successful for user ID: {user.get('_id')}")
+        logger.info(f"Email OTP verification successful for user ID: {user_id}")
 
         response = await core_response(
             status_code=200,

@@ -2,6 +2,7 @@ from db.db import get_db_conn
 from db.collection import DBCollection
 from utils.core_response import core_response
 from utils.email_otp import generate_otp, send_email_otp
+from utils.auth_challenges import create_challenge
 from bson import ObjectId
 from logging_config import logger
 
@@ -33,10 +34,12 @@ async def setup_email_otp(user_id: str, email: str):
         # Send OTP to email
         await send_email_otp(email, otp)
 
-        # Store OTP temporarily (not enabled yet)
-        await users_collection.update_one(
-            {"_id": ObjectId(user_id)},
-            {"$set": {"_email_otp_temp": otp}}
+        # Store OTP in auth_challenges (not enabled yet)
+        challenge_id = await create_challenge(
+            user_id=user_id,
+            challenge_type="email_otp_setup",
+            challenge_data=otp,
+            expires_in_minutes=10
         )
 
         logger.info(f"Email OTP setup initiated for user {user_id}")
@@ -45,7 +48,8 @@ async def setup_email_otp(user_id: str, email: str):
             status_code=200,
             message="Email OTP setup initiated. Check your email for the verification code.",
             data={
-                "message": "OTP sent to your email"
+                "message": "OTP sent to your email",
+                "challenge_id": challenge_id
             }
         )
     except Exception as e:

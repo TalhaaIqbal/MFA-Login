@@ -1,14 +1,13 @@
-from time import time
 from db.db import get_db_conn
 from db.collection import DBCollection
 from utils.core_response import core_response
 from features.auth.utils.two_factor import verify_totp_code
 from utils.encryption import decrypt_data
 from utils.session_manager import create_session
+from utils.auth_challenges import verify_and_consume_challenge
 from bson import ObjectId
 from logging_config import logger
 from utils.cookies import set_session_cookie
-import hashlib
 
 
 async def verify_2fa_login(temp_token: str, code: str):
@@ -17,17 +16,21 @@ async def verify_2fa_login(temp_token: str, code: str):
         db_conn = await get_db_conn()
         users_collection = DBCollection.USERS(db_conn)
 
-        # Hash the temp token and find user directly using indexed hash field (O(1) lookup)
-        temp_token_hash = hashlib.sha256(temp_token.encode()).hexdigest()
-        user = await users_collection.find_one({
-            "_2fa_temp_token_hash": temp_token_hash,
-            "_2fa_temp_token_expires": {"$gt": int(time() * 1000)}
-        })
+        # Verify challenge and get user_id (no data verification needed for TOTP)
+        user_id = await verify_and_consume_challenge(temp_token, "totp_login")
 
-        if not user:
+        if not user_id:
             return await core_response(
                 status_code=400,
                 message="Invalid or expired temporary token"
+            )
+
+        # Get user data
+        user = await users_collection.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            return await core_response(
+                status_code=404,
+                message="User not found"
             )
 
         # Decrypt the 2FA secret for verification
@@ -41,22 +44,16 @@ async def verify_2fa_login(temp_token: str, code: str):
 
         # Verify TOTP code
         if not verify_totp_code(decrypted_secret, code):
-            logger.warning(f"Invalid 2FA code for user ID: {user.get('_id')}")
+            logger.warning(f"Invalid 2FA code for user ID: {user_id}")
             return await core_response(
                 status_code=400,
                 message="Invalid verification code"
             )
 
-        # Clear temp token and hash
-        await users_collection.update_one(
-            {"_id": user["_id"]},
-            {"$unset": {"_2fa_temp_token": 1, "_2fa_temp_token_hash": 1, "_2fa_temp_token_expires": 1}}
-        )
-
         # Create session
-        session_id = await create_session(str(user.get("_id")))
+        session_id = await create_session(user_id)
 
-        logger.info(f"2FA verification successful for user ID: {user.get('_id')}")
+        logger.info(f"2FA verification successful for user ID: {user_id}")
 
         response = await core_response(
             status_code=200,

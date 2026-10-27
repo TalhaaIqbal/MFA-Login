@@ -32,7 +32,7 @@ async def oauth_callback_api(provider: str, request: Request):
         client = get_oauth_client(provider)
         token = await client.authorize_access_token(request)
         user = await extract_user_info(provider, client, token)
-        session_id = await handle_oauth_user(user["email"], user["name"], provider, user["provider_id"])
+        session_id, user_data = await handle_oauth_user(user["email"], user["name"], provider, user["provider_id"])
         return set_oauth_cookie(session_id)
     except OAuthError as e:
         logger.error(f"OAuth error for {provider}: {e}")
