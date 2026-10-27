@@ -10,7 +10,7 @@ from middlewares.limiter import add_slowapi_middleware, limiter
 from utils.oauth import oauth, init_oauth
 
 from routers.routers import api_router
-from config import ENABLE_DOCS, SESSION_SECRET, COOKIE_SECURE
+from config import ENABLE_DOCS, SESSION_SECRET, COOKIE_SECURE, COOKIE_SAMESITE
 
 
 @asynccontextmanager
