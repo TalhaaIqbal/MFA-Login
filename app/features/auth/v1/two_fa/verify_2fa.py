@@ -7,7 +7,7 @@ from utils.encryption import decrypt_data
 from utils.session_manager import create_session
 from bson import ObjectId
 from logging_config import logger
-from config import COOKIE_SECURE, COOKIE_SAMESITE, COOKIE_DOMAIN, COOKIE_PARTITIONED
+from utils.cookies import set_session_cookie
 import hashlib
 
 
@@ -72,24 +72,7 @@ async def verify_2fa_login(temp_token: str, code: str):
             }
         )
 
-        # Set HttpOnly cookie for session
-        cookie_kwargs = {
-            "httponly": True,
-            "secure": COOKIE_SECURE,
-            "samesite": COOKIE_SAMESITE,
-            "path": "/",  # Important: set path explicitly
-            "max_age": 604800  # 7 days
-        }
-        if COOKIE_PARTITIONED:
-            cookie_kwargs["partitioned"] = True
-        if COOKIE_DOMAIN:
-            cookie_kwargs["domain"] = COOKIE_DOMAIN
-
-        response.set_cookie(
-            key="session_id",
-            value=session_id,
-            **cookie_kwargs
-        )
+        set_session_cookie(response, session_id)
 
         return response
     except Exception as e:

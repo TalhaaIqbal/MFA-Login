@@ -6,7 +6,6 @@ from utils.session_manager import create_session
 
 
 async def handle_oauth_user(email: str, name: str, provider: str, provider_id: str):
-    """Handle OAuth user - login existing or create new user"""
     db_conn = await get_db_conn()
     users_collection = DBCollection.USERS(db_conn)
 
@@ -32,7 +31,4 @@ async def handle_oauth_user(email: str, name: str, provider: str, provider_id: s
         session_id = await create_session(str(result.inserted_id))
         logger.info(f"OAuth signup successful for user ID: {result.inserted_id}")
 
-    # Get user details
-    user = await users_collection.find_one({"email": email})
-
-    return session_id, user
+    return session_id

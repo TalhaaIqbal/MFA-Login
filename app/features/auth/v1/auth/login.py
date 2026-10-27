@@ -7,7 +7,7 @@ from db.collection import DBCollection
 from features.auth.utils.verify_password import verify_password
 from utils.encryption import encrypt_data
 from utils.session_manager import create_session
-from config import COOKIE_SECURE, COOKIE_SAMESITE, COOKIE_DOMAIN, COOKIE_PARTITIONED
+from utils.cookies import set_session_cookie
 import secrets
 import hashlib
 
@@ -27,7 +27,7 @@ async def login(payload: LoginRequest):
                 message="Invalid email or password"
             )
 
-        if not verify_password(payload.password, user.get("password")):
+        if not user.get("password") or not verify_password(payload.password, user["password"]):
             logger.warning(f"Invalid password for email: {redact_email(payload.email)}")
             return await core_response(
                 status_code=401,
@@ -129,24 +129,7 @@ async def login(payload: LoginRequest):
             }
         )
 
-        # Set HttpOnly cookie for session
-        cookie_kwargs = {
-            "httponly": True,
-            "secure": COOKIE_SECURE,
-            "samesite": COOKIE_SAMESITE,
-            "path": "/",  # Important: set path explicitly
-            "max_age": 604800,  # 7 days
-        }
-        if COOKIE_PARTITIONED:
-            cookie_kwargs["partitioned"] = True
-        if COOKIE_DOMAIN:
-            cookie_kwargs["domain"] = COOKIE_DOMAIN
-
-        response.set_cookie(
-            key="session_id",
-            value=session_id,
-            **cookie_kwargs
-        )
+        set_session_cookie(response, session_id)
 
         return response
 

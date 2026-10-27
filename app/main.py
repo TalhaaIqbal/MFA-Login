@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from starlette.middleware.sessions import SessionMiddleware
 from db.db import init_db, close_db_conn
 from contextlib import asynccontextmanager
 
@@ -9,7 +10,7 @@ from middlewares.limiter import add_slowapi_middleware, limiter
 from utils.oauth import oauth, init_oauth
 
 from routers.routers import api_router
-from config import ENABLE_DOCS
+from config import ENABLE_DOCS, SESSION_SECRET, COOKIE_SECURE
 
 
 @asynccontextmanager
@@ -42,6 +43,13 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SESSION_SECRET,
+    same_site="lax",
+    https_only=COOKIE_SECURE,
+    max_age=600,
+)
 add_cors_middleware(app)
 add_slowapi_middleware(app)
 

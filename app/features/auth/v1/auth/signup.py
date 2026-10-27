@@ -8,7 +8,7 @@ from models.auth.auth import RegisterRequest
 from features.auth.utils.hash_password import hash_password
 from utils.session_manager import create_session
 from utils.core_response import core_response
-from config import COOKIE_SECURE, COOKIE_SAMESITE, COOKIE_DOMAIN, COOKIE_PARTITIONED
+from utils.cookies import set_session_cookie
 
 
 async def signup(payload: RegisterRequest):
@@ -64,24 +64,7 @@ async def signup(payload: RegisterRequest):
             }
         )
 
-        # Set HttpOnly cookie for session
-        cookie_kwargs = {
-            "httponly": True,
-            "secure": COOKIE_SECURE,
-            "samesite": COOKIE_SAMESITE,
-            "path": "/",
-            "max_age": 604800  # 7 days
-        }
-        if COOKIE_PARTITIONED:
-            cookie_kwargs["partitioned"] = True
-        if COOKIE_DOMAIN:
-            cookie_kwargs["domain"] = COOKIE_DOMAIN
-
-        response.set_cookie(
-            key="session_id",
-            value=session_id,
-            **cookie_kwargs
-        )
+        set_session_cookie(response, session_id)
 
         return response
 

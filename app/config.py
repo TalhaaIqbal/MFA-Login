@@ -31,7 +31,7 @@ GITHUB_CLIENT_SECRET: str = environ.get("GITHUB_CLIENT_SECRET", "")
 GITHUB_REDIRECT_URI: str = environ.get("GITHUB_AUTHORIZED_REDIRECT_URI", "")
 
 MICROSOFT_CLIENT_ID: str = environ.get("MICROSOFT_CLIENT_ID", "")
-MICROSOFT_CLIENT_SECRET: str = environ.get("MICORSOFT_CLIENT_SECRET", "")
+MICROSOFT_CLIENT_SECRET: str = environ.get("MICROSOFT_CLIENT_SECRET") or environ.get("MICORSOFT_CLIENT_SECRET", "")
 MICROSOFT_TENANT_ID: str = environ.get("MICROSOFT_TENANT_ID", "common")
 MICROSOFT_REDIRECT_URI: str = environ.get("MICROSOFT_AUTHORIZED_REDIRECT_URI", "")
 
@@ -59,19 +59,8 @@ ENVIRONMENT: str = environ.get("ENVIRONMENT", "local").lower()  # 'local' or 'pr
 # Frontend URL for OAuth redirects
 FRONTEND_URL: str = environ.get("FRONTEND_URL", "http://localhost:5173")
 
-# Cookie Configuration
-# Automatically configured based on ENVIRONMENT
-if ENVIRONMENT == "production":
-    COOKIE_SECURE: bool = True
-    COOKIE_SAMESITE: str = "none"
-    COOKIE_PARTITIONED: bool = True
-else:
-    # For local development with different ports, use 'none' to allow cross-origin cookies
-    # Note: This may show browser warnings but works for HTTP on localhost
-    COOKIE_SECURE: bool = False
-    COOKIE_SAMESITE: str = "none"
-    COOKIE_PARTITIONED: bool = False
-
-COOKIE_DOMAIN: str = environ.get("COOKIE_DOMAIN", "")  # Optional: set cookie domain (e.g., .example.com for subdomain sharing)
-# Note: partitioned=True requires Python 3.14+ (not supported on Vercel yet)
-# Cookie warnings will appear in console but functionality works
+# Cookies: lax locally (same-site localhost), none+secure in production
+SESSION_SECRET: str = environ.get("SESSION_SECRET") or ENCRYPTION_KEY or "dev-only-change-me"
+COOKIE_SECURE: bool = ENVIRONMENT == "production"
+COOKIE_SAMESITE: str = environ.get("COOKIE_SAMESITE", "none" if COOKIE_SECURE else "lax")
+COOKIE_DOMAIN: str = environ.get("COOKIE_DOMAIN", "")

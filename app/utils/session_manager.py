@@ -74,10 +74,18 @@ async def verify_session(session_id: str) -> dict | None:
             return None
 
         # Check if session is expired
-        if session.get("expires_at", datetime.now(timezone.utc)) < datetime.now(timezone.utc):
-            logger.warning(f"Session expired: {session_id}")
-            # Clean up expired session
-            await sessions_collection.delete_one({"session_id": session_id})
+        expires_at = session.get("expires_at")
+        if expires_at:
+            # Ensure expires_at is timezone-aware
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            if expires_at < datetime.now(timezone.utc):
+                logger.warning(f"Session expired: {session_id}")
+                # Clean up expired session
+                await sessions_collection.delete_one({"session_id": session_id})
+                return None
+        else:
+            logger.warning(f"Session has no expiration: {session_id}")
             return None
 
         # Get user data

@@ -1,38 +1,26 @@
 import axios from 'axios'
 
-// Create shared axios instance
+const baseURL = import.meta.env.VITE_API_URI || 'http://localhost:8000/api/v1'
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URI || 'http://localhost:8000/api/v1',
-  headers: {},
-  withCredentials: true  // Required for HttpOnly cookies
+  baseURL,
+  withCredentials: true,
 })
 
-// Add ngrok header only if using ngrok (development convenience)
-const baseURL = import.meta.env.VITE_API_URI || 'http://localhost:8000/api/v1'
 if (baseURL.includes('ngrok')) {
   api.defaults.headers['ngrok-skip-browser-warning'] = 'true'
 }
 
-// Request interceptor - cookies are sent automatically with withCredentials
-api.interceptors.request.use(
-  (config) => {
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
+const AUTH_PATHS = ['/auth/me', '/auth/login', '/auth/signup', '/auth/logout', '/auth/2fa/verify', '/auth/email-otp/verify']
 
-// Response interceptor for error handling
+// Session expired mid-use: send back to login (not for the auth calls themselves)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Only redirect if user was previously authenticated (session expired)
-      // Don't redirect for login attempts with invalid credentials
-      const user = localStorage.getItem('user')
-      if (user) {
-        localStorage.removeItem('user')
+    const url = error.config?.url || ''
+    if (error.response?.status === 401 && !AUTH_PATHS.some((p) => url.startsWith(p))) {
+      localStorage.removeItem('user')
+      if (!['/login', '/signup'].includes(window.location.pathname)) {
         window.location.href = '/login'
       }
     }

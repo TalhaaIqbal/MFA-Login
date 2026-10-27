@@ -13,6 +13,7 @@ qrcode[pil]
 cryptography
 authlib
 httpx2
+itsdangerous
 
 
 # tests

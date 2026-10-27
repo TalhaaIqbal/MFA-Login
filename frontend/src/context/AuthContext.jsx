@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import axios from 'axios'
 import api from '../utils/api'
 
 const AuthContext = createContext(null)
@@ -10,24 +9,24 @@ export const AuthProvider = ({ children }) => {
   const [pending2FA, setPending2FA] = useState(false)
   const [tempToken, setTempToken] = useState(null)
   const [pendingUserId, setPendingUserId] = useState(null)
+  const [mfaMethod, setMfaMethod] = useState('totp')
  
 
   useEffect(() => {
     const verifySession = async () => {
-      // Always verify with server to get the actual role from database
-      // This prevents role manipulation via localStorage
       try {
-        // Use direct axios call without interceptor redirect
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_URI || 'http://localhost:8000/api/v1'}/auth/me`,
-          { withCredentials: true }
-        )
+        const response = await api.get('/auth/me')
         setUser(response.data.data)
         localStorage.setItem('user', JSON.stringify(response.data.data))
       } catch (err) {
-        // Session invalid, clear local storage
-        localStorage.removeItem('user')
-        setUser(null)
+        // Only a 401 means "not logged in"; keep local user on network hiccups
+        if (err.response?.status === 401) {
+          localStorage.removeItem('user')
+          setUser(null)
+        } else {
+          const cached = localStorage.getItem('user')
+          if (cached) setUser(JSON.parse(cached))
+        }
       } finally {
         setLoading(false)
       }
@@ -44,11 +43,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       // Call backend logout to clear HttpOnly cookies
-      await axios.post(
-        `${import.meta.env.VITE_API_URI || 'http://localhost:8000/api/v1'}/auth/logout`,
-        {},
-        { withCredentials: true }
-      )
+      await api.post('/auth/logout')
     } catch (err) {
       // Continue with local logout even if backend fails
       console.error('Logout error:', err)
@@ -62,12 +57,13 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const setPending2FAData = (tempToken, userId) => {
+  const setPending2FAData = (tempToken, userId, method = 'totp') => {
+    setMfaMethod(method)
     setPending2FA(true)
     setTempToken(tempToken)
     setPendingUserId(userId)
     // Store in sessionStorage for page refresh handling
-    sessionStorage.setItem('pending2FA', JSON.stringify({ tempToken, userId }))
+    sessionStorage.setItem('pending2FA', JSON.stringify({ tempToken, userId, method }))
   }
 
   const clearPending2FA = () => {
@@ -79,15 +75,11 @@ export const AuthProvider = ({ children }) => {
 
   const verify2FA = async (code) => {
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URI || 'http://localhost:8000/api/v1'}/auth/2fa/verify`,
+      const isEmail = mfaMethod === 'email'
+      const response = await api.post(
+        isEmail ? '/auth/email-otp/verify' : '/auth/2fa/verify',
         { code },
-        {
-          headers: {
-            'X-2FA-Token': tempToken
-          },
-          withCredentials: true
-        }
+        { headers: { [isEmail ? 'X-Email-OTP-Token' : 'X-2FA-Token']: tempToken } }
       )
 
       if (response.data.data && response.data.data.user_details) {
@@ -107,10 +99,7 @@ export const AuthProvider = ({ children }) => {
 
   const refreshUser = async () => {
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URI || 'http://localhost:8000/api/v1'}/auth/me`,
-        { withCredentials: true }
-      )
+      const response = await api.get('/auth/me')
       setUser(response.data.data)
       localStorage.setItem('user', JSON.stringify(response.data.data))
       return response.data.data
@@ -126,7 +115,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, loading, pending2FA, tempToken, pendingUserId, setPending2FAData, clearPending2FA, verify2FA, refreshUser, isAdmin }}>
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, loading, pending2FA, tempToken, pendingUserId, mfaMethod, setPending2FAData, clearPending2FA, verify2FA, refreshUser, isAdmin }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import api from '../utils/api'
 import { useAuth } from '../context/AuthContext'
@@ -8,7 +8,8 @@ import logger from '../utils/logger'
 function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [searchParams] = useSearchParams()
+  const [error, setError] = useState(searchParams.get('error') ? 'Social sign-in failed. Please try again.' : '')
   const [loading, setLoading] = useState(false)
   const [show2FAInput, setShow2FAInput] = useState(false)
   const [twoFactorCode, setTwoFactorCode] = useState('')
@@ -21,11 +22,11 @@ function Login() {
     setLoading(true)
 
     try {
-      const response = await api.post('/auth/login', { email, password }, { withCredentials: true })
+      const response = await api.post('/auth/login', { email, password })
 
       if (response.data.data.requires_2fa) {
         // 2FA is required, show verification input
-        setPending2FAData(response.data.data.temp_token, response.data.data.user_id)
+        setPending2FAData(response.data.data.temp_token, response.data.data.user_id, response.data.data.mfa_method)
         setShow2FAInput(true)
         setLoading(false)
       } else if (response.data.data && response.data.data.user_details) {
