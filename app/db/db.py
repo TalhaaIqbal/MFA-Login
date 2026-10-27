@@ -22,12 +22,7 @@ async def init_db():
             _client = AsyncMongoClient(
                 DB_URI,
                 tls=True,
-                minPoolSize=2,
-                maxPoolSize=10,
-                maxIdleTimeMS=30000,  # Close idle connections after 30 seconds
-                serverSelectionTimeoutMS=10000,  # Timeout for server selection
-                connectTimeoutMS=10000,  # Timeout for initial connection
-                socketTimeoutMS=10000,  # Timeout for socket operations
+                minPoolSize=5,
                 tlsCAFile=certifi.where(),
             )
             _db = _client[MONGO_DB]
