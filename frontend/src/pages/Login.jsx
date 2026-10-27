@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import api from '../utils/api'
 import { useAuth } from '../context/AuthContext'
@@ -200,6 +200,12 @@ function Login() {
             </button>
           </form>
         )}
+
+        <div className="mt-6 text-center text-sm text-gray-500">
+          <Link to="/privacy-policy" className="text-emerald-600 hover:text-emerald-700">
+            Privacy Policy
+          </Link>
+        </div>
       </div>
     </div>
     </>

@@ -5,6 +5,7 @@ import PublicRoute from './components/route/PublicRoute'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
+import PrivacyPolicy from './pages/PrivacyPolicy'
 import NotFound from './pages/NotFound'
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
               </PublicRoute>
             }
           />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route
             path="/dashboard"
             element={

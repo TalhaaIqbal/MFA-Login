@@ -3,6 +3,7 @@ import Sidebar from '../components/sidebar/Sidebar'
 import TopNav from '../components/TopNav'
 import { Helmet } from 'react-helmet-async'
 import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import api from '../utils/api'
 import logger from '../utils/logger'
 
@@ -224,6 +225,11 @@ function Dashboard() {
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-gray-600"><strong>Role:</strong> {user?.role}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <Link to="/privacy-policy" className="text-emerald-600 hover:text-emerald-700">
+                    View Privacy Policy
+                  </Link>
                 </div>
               </div>
             </div>
