@@ -8,11 +8,24 @@ import api from '../utils/api'
 function OAuthCallback() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { refreshUser } = useAuth()
+  const { refreshUser, setPending2FAData } = useAuth()
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
       try {
+        // Check if 2FA is required after OAuth
+        const requires2FA = searchParams.get('requires_2fa')
+        const mfaMethod = searchParams.get('mfa_method')
+        const tempToken = searchParams.get('temp_token')
+        const userId = searchParams.get('user_id')
+
+        if (requires2FA === 'true' && tempToken && userId) {
+          // Set pending 2FA data and redirect to login for verification
+          setPending2FAData(tempToken, userId, mfaMethod || 'totp')
+          navigate('/login', { replace: true })
+          return
+        }
+
         // Check if session_id is in query params (for cross-domain OAuth)
         const sessionId = searchParams.get('session_id')
 
@@ -36,7 +49,7 @@ function OAuthCallback() {
     }
 
     handleOAuthCallback()
-  }, [navigate, refreshUser, searchParams, setSearchParams])
+  }, [navigate, refreshUser, searchParams, setSearchParams, setPending2FAData])
 
   return (
     <>
