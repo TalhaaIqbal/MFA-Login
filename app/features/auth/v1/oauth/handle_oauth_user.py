@@ -3,7 +3,6 @@ from db.collection import DBCollection
 from time import time
 from logging_config import logger
 from utils.session_manager import create_session
-from utils.auth_identities import create_oauth_identity, find_user_by_oauth_identity
 from bson import ObjectId
 
 
@@ -11,17 +10,26 @@ async def handle_oauth_user(email: str, name: str, provider: str, provider_id: s
     db_conn = await get_db_conn()
     users_collection = DBCollection.USERS(db_conn)
 
-    # First check if OAuth identity exists
-    user_id = await find_user_by_oauth_identity(provider, provider_id)
+    # Check if user exists with this OAuth provider
+    user = await users_collection.find_one({
+        "oauth_providers": {
+            "$elemMatch": {
+                "provider": provider,
+                "provider_id": provider_id
+            }
+        }
+    })
 
-    if user_id:
-        # Existing user via OAuth identity - login
+    if user:
+        # Existing user via OAuth - login
+        user_id = str(user.get("_id"))
         session_id = await create_session(user_id)
         # Update last used timestamp
-        await create_oauth_identity(user_id, provider, provider_id, email)
+        await users_collection.update_one(
+            {"_id": ObjectId(user_id), "oauth_providers.provider": provider},
+            {"$set": {"oauth_providers.$.last_used": int(time() * 1000)}}
+        )
         logger.info(f"OAuth login successful for user ID: {user_id}")
-        # Get user details
-        user = await users_collection.find_one({"_id": ObjectId(user_id)})
         return session_id, user
 
     # Check if user exists by email (but not via this OAuth provider)
@@ -29,9 +37,24 @@ async def handle_oauth_user(email: str, name: str, provider: str, provider_id: s
 
     if user:
         # Existing user with email, but new OAuth provider - link it
-        await create_oauth_identity(str(user.get("_id")), provider, provider_id, email)
-        session_id = await create_session(str(user.get("_id")))
-        logger.info(f"OAuth provider linked for user ID: {user.get('_id')}")
+        user_id = str(user.get("_id"))
+        await users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {
+                "$push": {
+                    "oauth_providers": {
+                        "provider": provider,
+                        "provider_id": provider_id,
+                        "email": email,
+                        "created_at": int(time() * 1000),
+                        "last_used": int(time() * 1000)
+                    }
+                }
+            }
+        )
+        session_id = await create_session(user_id)
+        logger.info(f"OAuth provider linked for user ID: {user_id}")
+        user = await users_collection.find_one({"_id": ObjectId(user_id)})
         return session_id, user
     else:
         # New user - signup
@@ -40,13 +63,18 @@ async def handle_oauth_user(email: str, name: str, provider: str, provider_id: s
             "full_name": name or email.split('@')[0],
             "role": "user",
             "is_2fa_enabled": False,
+            "oauth_providers": [{
+                "provider": provider,
+                "provider_id": provider_id,
+                "email": email,
+                "created_at": int(time() * 1000),
+                "last_used": int(time() * 1000)
+            }],
             "created_at": int(time() * 1000),
             "updated_at": int(time() * 1000)
         }
         result = await users_collection.insert_one(new_user)
         user_id = str(result.inserted_id)
-        # Create OAuth identity
-        await create_oauth_identity(user_id, provider, provider_id, email)
         session_id = await create_session(user_id)
         logger.info(f"OAuth signup successful for user ID: {user_id}")
 

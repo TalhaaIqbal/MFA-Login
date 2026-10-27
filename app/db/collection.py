@@ -7,12 +7,9 @@ from pymongo.asynchronous.database import (
 
 class DBCollection(Enum):
     USERS = "users"
-    AUTH_IDENTITIES = "auth_identities"
     AUTH_SESSIONS = "auth_sessions"
-    AUTH_CHALLENGES = "auth_challenges"
     NOTIFICATIONS = "notifications"
-    
-    
+
 
     def __call__(self, db_conn: AsyncDatabase) -> AsyncCollection:
         return db_conn[self.value]

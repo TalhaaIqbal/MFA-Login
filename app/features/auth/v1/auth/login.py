@@ -7,7 +7,7 @@ from db.collection import DBCollection
 from features.auth.utils.verify_password import verify_password
 from utils.session_manager import create_session
 from utils.cookies import set_session_cookie
-from utils.auth_challenges import create_challenge
+from utils.jwt_tokens import create_temp_token
 from utils.email_otp import generate_otp, send_email_otp
 
 
@@ -38,11 +38,10 @@ async def login(payload: LoginRequest):
         is_email_otp_enabled = user.get("is_email_otp_enabled", False)
 
         if is_2fa_enabled:
-            # Create challenge for TOTP 2FA verification
-            temp_token = await create_challenge(
+            # Create JWT token for TOTP 2FA verification
+            temp_token = create_temp_token(
                 user_id=str(user.get("_id")),
-                challenge_type="totp_login",
-                challenge_data="totp_verification",
+                token_type="totp_login",
                 expires_in_minutes=5
             )
 
@@ -64,11 +63,21 @@ async def login(payload: LoginRequest):
             otp = generate_otp()
             await send_email_otp(user.get("email"), otp)
 
-            # Create challenge for email OTP verification
-            temp_token = await create_challenge(
+            # Store OTP in user document with expiration
+            await users_collection.update_one(
+                {"_id": user.get("_id")},
+                {
+                    "$set": {
+                        "email_otp": otp,
+                        "email_otp_expires": int(time()) + 600  # 10 minutes
+                    }
+                }
+            )
+
+            # Create JWT token for email OTP verification
+            temp_token = create_temp_token(
                 user_id=str(user.get("_id")),
-                challenge_type="email_otp_login",
-                challenge_data=otp,
+                token_type="email_otp_login",
                 expires_in_minutes=10
             )
 

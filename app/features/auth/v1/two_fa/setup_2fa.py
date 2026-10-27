@@ -3,9 +3,9 @@ from db.collection import DBCollection
 from utils.core_response import core_response
 from features.auth.utils.two_factor import generate_totp_secret, generate_qr_code
 from utils.encryption import encrypt_data
-from utils.auth_challenges import create_challenge, delete_user_challenges
 from bson import ObjectId
 from logging_config import logger
+from time import time
 
 
 async def setup_2fa(user_id: str, email: str):
@@ -23,7 +23,6 @@ async def setup_2fa(user_id: str, email: str):
             )
 
         # Security: Prevent overwriting secret if 2FA is already enabled
-        # This prevents account lockout by ensuring existing authenticator codes still work
         if user.get("is_2fa_enabled") is True:
             return await core_response(
                 status_code=400,
@@ -37,12 +36,15 @@ async def setup_2fa(user_id: str, email: str):
         # Encrypt secret before storing
         encrypted_secret = encrypt_data(secret)
 
-        # Store encrypted secret in auth_challenges (not enabled yet)
-        challenge_id = await create_challenge(
-            user_id=user_id,
-            challenge_type="totp_setup",
-            challenge_data=encrypted_secret,
-            expires_in_minutes=10
+        # Store encrypted secret in user document (not enabled yet)
+        await users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {
+                "$set": {
+                    "_2fa_secret_pending": encrypted_secret,
+                    "_2fa_secret_pending_expires": int(time()) + 600  # 10 minutes
+                }
+            }
         )
 
         logger.info(f"2FA setup initiated for user {user_id}")
@@ -52,8 +54,7 @@ async def setup_2fa(user_id: str, email: str):
             message="2FA setup initiated",
             data={
                 "secret": secret,
-                "qr_code": qr_code,
-                "challenge_id": challenge_id
+                "qr_code": qr_code
             }
         )
     except Exception as e:

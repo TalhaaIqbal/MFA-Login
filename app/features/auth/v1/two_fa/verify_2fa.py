@@ -4,26 +4,28 @@ from utils.core_response import core_response
 from features.auth.utils.two_factor import verify_totp_code
 from utils.encryption import decrypt_data
 from utils.session_manager import create_session
-from utils.auth_challenges import verify_and_consume_challenge
+from utils.jwt_tokens import verify_temp_token
 from bson import ObjectId
 from logging_config import logger
 from utils.cookies import set_session_cookie
 
 
 async def verify_2fa_login(temp_token: str, code: str):
-    """Verify TOTP code during login using temporary token"""
+    """Verify TOTP code during login using temporary JWT token"""
     try:
-        db_conn = await get_db_conn()
-        users_collection = DBCollection.USERS(db_conn)
+        # Verify JWT token and get user_id
+        token_data = verify_temp_token(temp_token, "totp_login")
 
-        # Verify challenge and get user_id (no data verification needed for TOTP)
-        user_id = await verify_and_consume_challenge(temp_token, "totp_login")
-
-        if not user_id:
+        if not token_data:
             return await core_response(
                 status_code=400,
                 message="Invalid or expired temporary token"
             )
+
+        user_id = token_data["user_id"]
+
+        db_conn = await get_db_conn()
+        users_collection = DBCollection.USERS(db_conn)
 
         # Get user data
         user = await users_collection.find_one({"_id": ObjectId(user_id)})

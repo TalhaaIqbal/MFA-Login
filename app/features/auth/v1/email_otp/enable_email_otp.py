@@ -2,9 +2,9 @@ from db.db import get_db_conn
 from db.collection import DBCollection
 from utils.core_response import core_response
 from utils.email_otp import verify_otp
-from utils.auth_challenges import get_challenge_data, verify_and_consume_challenge
 from bson import ObjectId
 from logging_config import logger
+from time import time
 
 
 async def enable_email_otp(user_id: str, code: str, challenge_id: str = None):
@@ -27,41 +27,44 @@ async def enable_email_otp(user_id: str, code: str, challenge_id: str = None):
                 message="Email OTP is already enabled"
             )
 
-        # Get the OTP from challenge
-        if not challenge_id:
+        # Get the pending OTP from user document
+        pending_otp = user.get("email_otp_pending")
+        otp_expires = user.get("email_otp_pending_expires")
+
+        if not pending_otp:
+            logger.warning(f"No pending email OTP for user: {user_id}")
             return await core_response(
                 status_code=400,
-                message="Challenge ID required"
+                message="No pending email OTP setup. Please setup email OTP again."
             )
 
-        challenge_data = await get_challenge_data(challenge_id, "email_otp_setup")
-        if not challenge_data:
-            return await core_response(
-                status_code=400,
-                message="Invalid or expired challenge. Please setup email OTP again."
+        # Check if OTP has expired
+        if otp_expires and int(time()) > otp_expires:
+            logger.warning(f"Pending email OTP expired for user: {user_id}")
+            await users_collection.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$unset": {"email_otp_pending": "", "email_otp_pending_expires": ""}}
             )
-
-        # Verify user matches
-        if challenge_data["user_id"] != user_id:
             return await core_response(
                 status_code=400,
-                message="Invalid challenge"
+                message="Setup expired. Please setup email OTP again."
             )
 
         # Verify the code
-        if not verify_otp(challenge_data["challenge_data"], code):
+        if not verify_otp(pending_otp, code):
+            logger.warning(f"Invalid email OTP for user ID: {user_id}")
             return await core_response(
                 status_code=400,
                 message="Invalid verification code"
             )
 
-        # Consume the challenge
-        await verify_and_consume_challenge(challenge_id, "email_otp_setup", challenge_data["challenge_data"])
-
-        # Enable email OTP
+        # Enable email OTP and clear pending OTP
         await users_collection.update_one(
             {"_id": ObjectId(user_id)},
-            {"$set": {"is_email_otp_enabled": True}}
+            {
+                "$set": {"is_email_otp_enabled": True},
+                "$unset": {"email_otp_pending": "", "email_otp_pending_expires": ""}
+            }
         )
 
         logger.info(f"Email OTP enabled successfully for user {user_id}")
