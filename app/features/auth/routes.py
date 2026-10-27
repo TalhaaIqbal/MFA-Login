@@ -10,6 +10,7 @@ from features.auth.v1.email_otp_apis import setup_email_otp_api, enable_email_ot
 from middlewares.limiter import limiter
 from utils.get_current_user import get_current_user
 from utils.core_response import core_response
+from logging_config import logger
 
 router = APIRouter()
 
@@ -51,6 +52,7 @@ async def setup_2fa(request: Request, current_user: dict = Depends(get_current_u
 @router.post("/2fa/enable")
 @limiter.limit("10/minute")
 async def enable_2fa(request: Request, payload: TotpEnableRequest, current_user: dict = Depends(get_current_user)):
+    logger.info(f"enable_2fa route called - user_id: {current_user['id']}, code: {payload.code}, challenge_id: {payload.challenge_id}")
     return await enable_2fa_api(current_user["id"], payload.code, payload.challenge_id)
 
 

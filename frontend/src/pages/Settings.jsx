@@ -74,16 +74,19 @@ function Settings() {
     setLoading(true)
 
     try {
-      await api.post('/auth/2fa/enable', {
+      logger.log('Enabling 2FA with code:', verificationCode, 'challenge_id:', qrCodeData?.challenge_id)
+      const response = await api.post('/auth/2fa/enable', {
         code: verificationCode,
         challenge_id: qrCodeData.challenge_id
       })
+      logger.log('2FA enable response:', response.data)
       setSuccess('2FA enabled successfully!')
       setIs2FAEnabled(true)
       setShowQRCode(false)
       setVerificationCode('')
       setQrCodeData(null)
     } catch (err) {
+      logger.error('Failed to enable 2FA:', err)
       setError(err.response?.data?.message || 'Failed to enable 2FA')
     } finally {
       setLoading(false)
