@@ -46,7 +46,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,
-    same_site="lax",
+    same_site=COOKIE_SAMESITE,
     https_only=COOKIE_SECURE,
     max_age=600,
 )

@@ -20,7 +20,9 @@ async def handle_oauth_user(email: str, name: str, provider: str, provider_id: s
         # Update last used timestamp
         await create_oauth_identity(user_id, provider, provider_id, email)
         logger.info(f"OAuth login successful for user ID: {user_id}")
-        return session_id
+        # Get user details
+        user = await users_collection.find_one({"_id": ObjectId(user_id)})
+        return session_id, user
 
     # Check if user exists by email (but not via this OAuth provider)
     user = await users_collection.find_one({"email": email})
@@ -30,7 +32,7 @@ async def handle_oauth_user(email: str, name: str, provider: str, provider_id: s
         await create_oauth_identity(str(user.get("_id")), provider, provider_id, email)
         session_id = await create_session(str(user.get("_id")))
         logger.info(f"OAuth provider linked for user ID: {user.get('_id')}")
-        return session_id
+        return session_id, user
     else:
         # New user - signup
         new_user = {

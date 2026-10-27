@@ -64,3 +64,4 @@ SESSION_SECRET: str = environ.get("SESSION_SECRET") or ENCRYPTION_KEY or "dev-on
 COOKIE_SECURE: bool = ENVIRONMENT == "production"
 COOKIE_SAMESITE: str = environ.get("COOKIE_SAMESITE", "none" if COOKIE_SECURE else "lax")
 COOKIE_DOMAIN: str = environ.get("COOKIE_DOMAIN", "")
+COOKIE_PARTITIONED: bool = ENVIRONMENT == "production"
