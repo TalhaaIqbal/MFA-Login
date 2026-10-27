@@ -5,6 +5,7 @@ from models.auth.mfa import TotpEnableRequest, DisableMfaRequest, MfaVerifyReque
 from features.auth.v1.authentication import login_api, signup_api
 from features.auth.v1.two_factor import disable_2fa_api, enable_2fa_api, setup_2fa_api, verify_2fa_api
 from features.auth.v1.auth.logout import logout_api
+from features.auth.oauth_routes import router as oauth_router
 from middlewares.limiter import limiter
 from utils.get_current_user import get_current_user
 from utils.core_response import core_response
@@ -68,3 +69,6 @@ async def verify_2fa(request: Request, payload: MfaVerifyRequest):
             message="Temporary token required"
         )
     return await verify_2fa_api(temp_token, payload.code)
+
+# Include OAuth routes
+router.include_router(oauth_router)

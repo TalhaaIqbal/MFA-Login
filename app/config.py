@@ -21,6 +21,20 @@ ADMIN_PASSWORD: str = environ.get("ADMIN_PASSWORD", "")
 # Encryption Configuration
 ENCRYPTION_KEY: str = environ.get("ENCRYPTION_KEY", "")
 
+# OAuth Configuration
+GOOGLE_CLIENT_ID: str = environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET: str = environ.get("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI: str = environ.get("GOOGLE_AUTHORIZED_REDIRECT_URI", "")
+
+GITHUB_CLIENT_ID: str = environ.get("GITHUB_CLIENT_ID", "")
+GITHUB_CLIENT_SECRET: str = environ.get("GITHUB_CLIENT_SECRET", "")
+GITHUB_REDIRECT_URI: str = environ.get("GITHUB_AUTHORIZED_REDIRECT_URI", "")
+
+MICROSOFT_CLIENT_ID: str = environ.get("MICROSOFT_CLIENT_ID", "")
+MICROSOFT_CLIENT_SECRET: str = environ.get("MICORSOFT_CLIENT_SECRET", "")
+MICROSOFT_TENANT_ID: str = environ.get("MICROSOFT_TENANT_ID", "common")
+MICROSOFT_REDIRECT_URI: str = environ.get("MICROSOFT_AUTHORIZED_REDIRECT_URI", "")
+
 # Validate ENCRYPTION_KEY is a valid Fernet key (44 bytes base64)
 if ENCRYPTION_KEY and len(ENCRYPTION_KEY) != 44:
     raise ValueError("ENCRYPTION_KEY must be a 44-byte base64-encoded string (Fernet key)")

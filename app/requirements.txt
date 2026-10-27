@@ -11,6 +11,9 @@ pyjwt
 pyotp
 qrcode[pil]
 cryptography
+authlib
+httpx2
+
 
 # tests
 pytest
