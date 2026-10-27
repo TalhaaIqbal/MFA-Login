@@ -18,6 +18,8 @@ function Settings() {
   const [showDisableModal, setShowDisableModal] = useState(false)
   const [disablePassword, setDisablePassword] = useState('')
   const [disableTotpCode, setDisableTotpCode] = useState('')
+  const [show2FASelection, setShow2FASelection] = useState(false)
+  const [selected2FAMethod, setSelected2FAMethod] = useState('')
 
   // Config state
   const [config, setConfig] = useState({
@@ -55,12 +57,24 @@ function Settings() {
   const setup2FA = async () => {
     setError('')
     setSuccess('')
+    setShow2FASelection(true)
+  }
+
+  const select2FAMethod = async (method) => {
+    setSelected2FAMethod(method)
+    setShow2FASelection(false)
     setLoading(true)
 
     try {
-      const response = await api.post('/auth/2fa/setup', {})
-      setQrCodeData(response.data.data)
-      setShowQRCode(true)
+      if (method === 'authenticator') {
+        const response = await api.post('/auth/2fa/setup', {})
+        setQrCodeData(response.data.data)
+        setShowQRCode(true)
+      } else if (method === 'email') {
+        const response = await api.post('/auth/email-otp/setup', {})
+        setSuccess('OTP sent to your email. Please check your inbox.')
+        setShowQRCode(true)
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to setup 2FA')
     } finally {
@@ -74,16 +88,25 @@ function Settings() {
     setLoading(true)
 
     try {
-      logger.log('Enabling 2FA with code:', verificationCode)
-      const response = await api.post('/auth/2fa/enable', {
-        code: verificationCode
-      })
-      logger.log('2FA enable response:', response.data)
-      setSuccess('2FA enabled successfully!')
+      logger.log('Enabling 2FA with code:', verificationCode, 'method:', selected2FAMethod)
+      if (selected2FAMethod === 'authenticator') {
+        const response = await api.post('/auth/2fa/enable', {
+          code: verificationCode
+        })
+        logger.log('2FA enable response:', response.data)
+        setSuccess('2FA enabled successfully!')
+      } else if (selected2FAMethod === 'email') {
+        const response = await api.post('/auth/email-otp/enable', {
+          code: verificationCode
+        })
+        logger.log('Email OTP enable response:', response.data)
+        setSuccess('Email OTP enabled successfully!')
+      }
       setIs2FAEnabled(true)
       setShowQRCode(false)
       setVerificationCode('')
       setQrCodeData(null)
+      setSelected2FAMethod('')
     } catch (err) {
       logger.error('Failed to enable 2FA:', err)
       setError(err.response?.data?.message || 'Failed to enable 2FA')
@@ -358,9 +381,51 @@ function Settings() {
                   </div>
                 )}
 
-                {showQRCode && qrCodeData && (
+                {show2FASelection && (
                   <div className="mt-6 border-t border-gray-200 pt-6">
-                    <h4 className="text-lg font-semibold text-gray-800 mb-4">Setup 2FA</h4>
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4">Choose 2FA Method</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <button
+                        onClick={() => select2FAMethod('authenticator')}
+                        className="p-6 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left"
+                      >
+                        <div className="flex items-center mb-2">
+                          <svg className="w-8 h-8 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          <span className="font-semibold text-gray-800">Authenticator App</span>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          Use Google Authenticator, Authy, or any TOTP app to generate codes
+                        </p>
+                      </button>
+                      <button
+                        onClick={() => select2FAMethod('email')}
+                        className="p-6 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left"
+                      >
+                        <div className="flex items-center mb-2">
+                          <svg className="w-8 h-8 text-emerald-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          <span className="font-semibold text-gray-800">Email OTP</span>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          Receive a one-time code via email each time you sign in
+                        </p>
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => setShow2FASelection(false)}
+                      className="mt-4 text-gray-600 hover:text-gray-800 text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
+                {showQRCode && selected2FAMethod === 'authenticator' && qrCodeData && (
+                  <div className="mt-6 border-t border-gray-200 pt-6">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4">Setup Authenticator App</h4>
                     <div className="flex flex-col items-center">
                       <img
                         src={qrCodeData.qr_code}
@@ -399,6 +464,54 @@ function Settings() {
                             setShowQRCode(false)
                             setQrCodeData(null)
                             setVerificationCode('')
+                            setSelected2FAMethod('')
+                          }}
+                          className="w-full mt-2 text-gray-600 hover:text-gray-800 text-sm"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {showQRCode && selected2FAMethod === 'email' && (
+                  <div className="mt-6 border-t border-gray-200 pt-6">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4">Setup Email OTP</h4>
+                    <div className="flex flex-col items-center">
+                      <p className="text-sm text-gray-600 mb-4 text-center">
+                        A verification code has been sent to your email. Please check your inbox.
+                      </p>
+                      <div className="w-full max-w-sm">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Enter verification code
+                        </label>
+                        <input
+                          type="text"
+                          value={verificationCode}
+                          onChange={(e) => setVerificationCode(e.target.value)}
+                          placeholder="6-digit code"
+                          maxLength={6}
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                        />
+                        <button
+                          onClick={enable2FA}
+                          disabled={loading || verificationCode.length !== 6}
+                          className="w-full mt-4 bg-emerald-500 text-white py-3 rounded-lg font-semibold hover:bg-emerald-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          {loading ? (
+                            <div className="flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                              <span className="ml-2">Verifying...</span>
+                            </div>
+                          ) : 'Enable Email OTP'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowQRCode(false)
+                            setQrCodeData(null)
+                            setVerificationCode('')
+                            setSelected2FAMethod('')
                           }}
                           className="w-full mt-2 text-gray-600 hover:text-gray-800 text-sm"
                         >
