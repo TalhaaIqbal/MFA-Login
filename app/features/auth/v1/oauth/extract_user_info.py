@@ -13,10 +13,28 @@ async def extract_user_info(provider: str, client, token):
     elif provider == "github":
         user = (await client.get("user", token=token)).json()
         emails = (await client.get("user/emails", token=token)).json()
-        primary = next((e for e in emails if e.get("primary") and e.get("verified")), None)
-        email = primary["email"] if primary else None
         name = user.get("name") or user.get("login")
         provider_id = str(user.get("id"))
+
+        # get the best available email in order of preference:
+        # 1. Primary AND verified email
+        # 2. Any verified email
+        # 3. Any email (even unverified)
+        # 4. Placeholder using GitHub username (last resort)
+        primary_verified = next((e for e in emails if e.get("primary") and e.get("verified")), None)
+        any_verified = next((e for e in emails if e.get("verified")), None)
+        any_email = next((e for e in emails if e.get("email")), None)
+
+        if primary_verified:
+            email = primary_verified["email"]
+        elif any_verified:
+            email = any_verified["email"]
+        elif any_email:
+            email = any_email["email"]
+        else:
+            # No email at all - generate placeholder using GitHub username
+            github_username = user.get("login")
+            email = f"{github_username}@github.users.noreply.com"
 
     elif provider == "microsoft":
         me = (await client.get("me", token=token)).json()

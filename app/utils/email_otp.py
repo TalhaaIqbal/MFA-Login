@@ -17,7 +17,7 @@ def verify_otp(stored_otp: str, provided_otp: str) -> bool:
     return stored_otp == provided_otp
 
 
-async def send_email_otp(email: str, otp: str):
+async def send_email_otp(email: str, otp: str, expiry_minutes: int = 10):
     """Send OTP to user's email using SMTP"""
     try:
         if not all([SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_EMAIL]):
@@ -31,20 +31,29 @@ async def send_email_otp(email: str, otp: str):
         message["From"] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
         message["To"] = email
 
+        # Format expiry time
+        if expiry_minutes == 1:
+            expiry_text = "1 minute"
+        elif expiry_minutes < 1:
+            expiry_seconds = int(expiry_minutes * 60)
+            expiry_text = f"{expiry_seconds} second{'s' if expiry_seconds != 1 else ''}"
+        else:
+            expiry_text = f"{expiry_minutes} minutes"
+
         # Create HTML content
         html_content = f"""
         <html>
         <body>
             <h2>Your Verification Code</h2>
             <p>Your verification code is: <strong>{otp}</strong></p>
-            <p>This code will expire in 10 minutes.</p>
+            <p>This code will expire in {expiry_text}.</p>
             <p>If you didn't request this code, please ignore this email.</p>
         </body>
         </html>
         """
 
         # Create plain text content
-        text_content = f"Your verification code is: {otp}\n\nThis code will expire in 10 minutes.\nIf you didn't request this code, please ignore this email."
+        text_content = f"Your verification code is: {otp}\n\nThis code will expire in {expiry_text}.\nIf you didn't request this code, please ignore this email."
 
         # Attach both versions
         part1 = MIMEText(text_content, "plain")

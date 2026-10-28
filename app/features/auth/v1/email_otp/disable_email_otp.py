@@ -5,6 +5,7 @@ from bson import ObjectId
 from logging_config import logger
 from features.auth.utils.verify_password import verify_password
 from utils.email_otp import verify_otp, generate_otp, send_email_otp
+from time import time
 
 
 async def disable_email_otp(user_id: str, password: str = None, email_otp_code: str = None):
@@ -51,6 +52,16 @@ async def disable_email_otp(user_id: str, password: str = None, email_otp_code: 
                     status_code=400,
                     message="No email OTP code available. Please request a new code first."
                 )
+
+            # Check if OTP has expired (60 seconds)
+            email_otp_expiry = user.get("email_otp_expiry")
+            if email_otp_expiry and time() > email_otp_expiry:
+                logger.warning(f"Expired email OTP code for disable attempt by user {user_id}")
+                return await core_response(
+                    status_code=401,
+                    message="Email OTP code has expired. Please request a new code."
+                )
+
             if not verify_otp(user.get("email_otp"), email_otp_code):
                 logger.warning(f"Invalid email OTP code for disable attempt by user {user_id}")
                 return await core_response(
@@ -59,10 +70,10 @@ async def disable_email_otp(user_id: str, password: str = None, email_otp_code: 
                 )
                 
 
-        # Disable email OTP
+        # Disable email OTP and clear OTP data
         await users_collection.update_one(
             {"_id": ObjectId(user_id)},
-            {"$unset": {"is_email_otp_enabled": 1}}
+            {"$unset": {"is_email_otp_enabled": 1, "email_otp": 1, "email_otp_expiry": 1}}
         )
 
         logger.info(f"Email OTP disabled successfully for user {user_id} with step-up authentication")
@@ -101,12 +112,13 @@ async def send_disable_email_otp(user_id: str, email: str):
 
         # Generate and send OTP
         otp = generate_otp()
-        await send_email_otp(email, otp)
+        await send_email_otp(email, otp, expiry_minutes=1)  # 1 minute = 60 seconds
 
-        # Store OTP in user document
+        # Store OTP and expiry timestamp (60 seconds) in user document
+        expiry_time = int(time()) + 60  # 60 seconds from now
         await users_collection.update_one(
             {"_id": ObjectId(user_id)},
-            {"$set": {"email_otp": otp}}
+            {"$set": {"email_otp": otp, "email_otp_expiry": expiry_time}}
         )
 
         logger.info(f"Email OTP sent for disable to user {user_id}")

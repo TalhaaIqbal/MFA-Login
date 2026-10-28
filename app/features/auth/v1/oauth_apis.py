@@ -45,6 +45,7 @@ async def oauth_callback_api(provider: str, request: Request):
             mfa_params = f"?requires_2fa=true&mfa_method={mfa_data['mfa_method']}&temp_token={mfa_data['temp_token']}&user_id={mfa_data['user_id']}"
             return Response(status_code=302, headers={"Location": f"{FRONTEND_URL}/oauth/callback{mfa_params}"})
 
+        logger.info("Session id: %s, use data: %s, mfa data: %s", session_id, user_data, mfa_data)
         return set_oauth_cookie(session_id)
     except OAuthError as e:
         logger.error(f"OAuth error for {provider}: {e}")
