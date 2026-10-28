@@ -19,6 +19,12 @@ function Signup() {
     e.preventDefault()
     setError('')
 
+    // Validate name
+    if (!/^[a-zA-Z0-9\s\-\'\.]+$/.test(name)) {
+      setError('Name may only contain letters, numbers, spaces, hyphens, apostrophes, and periods')
+      return
+    }
+
     // Validate passwords match
     if (password !== confirmPassword) {
       setError('Passwords do not match')
@@ -106,8 +112,13 @@ function Signup() {
               type="text"
               value={name}
               onChange={(e) => {
-                setName(e.target.value)
+                const value = e.target.value
+                setName(value)
                 setError('')
+                // Real-time validation
+                if (value && !/^[a-zA-Z0-9\s\-\'\.]*$/.test(value)) {
+                  setError('Name may only contain letters, numbers, spaces, hyphens, apostrophes, and periods')
+                }
               }}
               placeholder="Enter your full name"
               required
