@@ -10,10 +10,10 @@ slowapi
 pyjwt
 pyotp
 qrcode[pil]
+itsdangerous
 cryptography
 authlib
 httpx2
-itsdangerous
 
 
 # tests
