@@ -1,4 +1,6 @@
 import { useAuth } from '../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
+import { useToast } from '../components/Toast'
 import Sidebar from '../components/sidebar/Sidebar'
 import TopNav from '../components/TopNav'
 import { Helmet } from 'react-helmet-async'
@@ -8,6 +10,8 @@ import logger from '../utils/logger'
 
 function Settings() {
   const { user, isAdmin, refreshUser } = useAuth()
+  const navigate = useNavigate()
+  const { success: showToast } = useToast()
   const [is2FAEnabled, setIs2FAEnabled] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
   const [qrCodeData, setQrCodeData] = useState(null)
@@ -124,6 +128,10 @@ function Settings() {
       setVerificationCode('')
       setQrCodeData(null)
       setSelected2FAMethod('')
+
+      // Show toast and redirect to dashboard
+      showToast('2FA enabled successfully!', 'success', 5000)
+      navigate('/dashboard')
     } catch (err) {
       logger.error('Failed to enable 2FA:', err)
       setError(err.response?.data?.message || 'Failed to enable 2FA')
