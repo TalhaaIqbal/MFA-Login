@@ -389,9 +389,7 @@ function Settings() {
                     {!disableAuthMethod ? (
                       <>
                         <p className="text-sm text-gray-600 mb-4">
-                          {user?.is_2fa_enabled
-                            ? 'Choose how you want to verify your identity to disable authenticator app 2FA.'
-                            : 'Choose how you want to verify your identity to disable email OTP 2FA.'}
+                          Choose how you want to verify your identity to disable 2FA.
                         </p>
                         <div className="space-y-3">
                           <button
