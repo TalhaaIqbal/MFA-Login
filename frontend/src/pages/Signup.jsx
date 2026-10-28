@@ -54,12 +54,18 @@ function Signup() {
         throw new Error('Invalid response from server')
       }
     } catch (err) {
+      console.log('Signup error:', err)
+      console.log('Error response:', err.response)
+      console.log('Error data:', err.response?.data)
+
       // Handle Pydantic validation errors (422)
       if (err.response?.status === 422 && err.response?.data?.detail) {
         const validationErrors = err.response.data.detail
+        console.log('Validation errors:', validationErrors)
         if (Array.isArray(validationErrors)) {
           // Extract the first validation error message
           const firstError = validationErrors[0]
+          console.log('First error:', firstError)
           if (firstError && firstError.msg) {
             setError(firstError.msg)
           } else {
