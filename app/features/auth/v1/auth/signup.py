@@ -30,7 +30,7 @@ async def signup(payload: RegisterRequest):
                 message="Email already registered"
             )
 
-        # Hash the password
+        # Hash the password (confirm_password is only for validation)
         hashed_password = hash_password(payload.password)
 
         now = int(time() * 1000)

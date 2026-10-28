@@ -44,7 +44,7 @@ function Signup() {
     setLoading(true)
 
     try {
-      const response = await api.post('/auth/signup', { email, name, password }, { withCredentials: true })
+      const response = await api.post('/auth/signup', { email, name, password, confirm_password: confirmPassword }, { withCredentials: true })
 
       if (response.data.data && response.data.data.user_details) {
         // Auto-login after successful signup

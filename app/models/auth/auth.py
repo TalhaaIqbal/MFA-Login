@@ -34,11 +34,25 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     name: str = Field(..., min_length=2, max_length=100)
     password: str = Field(..., min_length=8, max_length=128)
+    confirm_password: str = Field(..., min_length=8, max_length=128)
 
     @field_validator("password")
     @classmethod
     def validate_password_strength(cls, v: str) -> str:
         return _validate_password(v)
+
+    @field_validator("confirm_password")
+    @classmethod
+    def validate_confirm_password_strength(cls, v: str) -> str:
+        return _validate_password(v)
+
+
+    @field_validator("confirm_password")
+    @classmethod
+    def validate_passwords_match(cls, v: str, info) -> str:
+        if "password" in info.data and v != info.data["password"]:
+            raise ValueError("Passwords do not match")
+        return v
 
     @field_validator("name")
     @classmethod
