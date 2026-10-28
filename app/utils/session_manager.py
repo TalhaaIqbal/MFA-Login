@@ -7,16 +7,7 @@ from logging_config import logger
 
 
 async def create_session(user_id: str, expires_delta: timedelta | None = None) -> str:
-    """
-    Create a new session for a user.
 
-    Args:
-        user_id: The user's ID
-        expires_delta: Optional custom expiration time (default: 30 minutes)
-
-    Returns:
-        str: The session ID
-    """
     try:
         db_conn = await get_db_conn()
         sessions_collection = DBCollection.AUTH_SESSIONS(db_conn)
@@ -47,15 +38,7 @@ async def create_session(user_id: str, expires_delta: timedelta | None = None) -
 
 
 async def verify_session(session_id: str) -> dict | None:
-    """
-    Verify a session and return user data if valid.
 
-    Args:
-        session_id: The session ID to verify
-
-    Returns:
-        dict | None: User data if session is valid, None otherwise
-    """
     try:
         db_conn = await get_db_conn()
         sessions_collection = DBCollection.AUTH_SESSIONS(db_conn)
@@ -115,15 +98,7 @@ async def verify_session(session_id: str) -> dict | None:
 
 
 async def revoke_session(session_id: str) -> bool:
-    """
-    Revoke a specific session.
 
-    Args:
-        session_id: The session ID to revoke
-
-    Returns:
-        bool: True if revoked successfully, False otherwise
-    """
     try:
         db_conn = await get_db_conn()
         sessions_collection = DBCollection.AUTH_SESSIONS(db_conn)
@@ -143,15 +118,7 @@ async def revoke_session(session_id: str) -> bool:
 
 
 async def revoke_all_user_sessions(user_id: str) -> int:
-    """
-    Revoke all sessions for a specific user.
 
-    Args:
-        user_id: The user's ID
-
-    Returns:
-        int: Number of sessions revoked
-    """
     try:
         db_conn = await get_db_conn()
         sessions_collection = DBCollection.AUTH_SESSIONS(db_conn)
@@ -169,10 +136,7 @@ async def revoke_all_user_sessions(user_id: str) -> int:
 
 
 async def cleanup_expired_sessions():
-    """
-    Clean up expired sessions from the database.
-    This should be called periodically (e.g., via a cron job).
-    """
+
     try:
         db_conn = await get_db_conn()
         sessions_collection = DBCollection.AUTH_SESSIONS(db_conn)

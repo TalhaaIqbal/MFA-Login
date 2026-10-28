@@ -5,6 +5,9 @@ from utils.cookies import clear_session_cookie, COOKIE_NAME
 
 
 async def logout_api(request: Request):
+    """
+    Revoke the current session and clear the cookie.
+    """
     session_id = request.cookies.get(COOKIE_NAME)
     if session_id:
         await revoke_session(session_id)

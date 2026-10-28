@@ -20,3 +20,4 @@ itsdangerous
 pytest
 pytest-asyncio
 pytest-cov
+selenium
