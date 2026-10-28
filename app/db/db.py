@@ -22,8 +22,12 @@ async def init_db():
             _client = AsyncMongoClient(
                 DB_URI,
                 tls=True,
-                minPoolSize=5,
                 tlsCAFile=certifi.where(),
+                maxPoolSize=5,
+                minPoolSize=0,                  # no background refilling in serverless
+                maxIdleTimeMS=30000,
+                connectTimeoutMS=5000,
+                serverSelectionTimeoutMS=5000,  # fail fast instead of hanging 20-30s
             )
             _db = _client[MONGO_DB]
 
