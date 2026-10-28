@@ -54,7 +54,25 @@ function Signup() {
         throw new Error('Invalid response from server')
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Signup failed')
+      // Handle Pydantic validation errors (422)
+      if (err.response?.status === 422 && err.response?.data?.detail) {
+        const validationErrors = err.response.data.detail
+        if (Array.isArray(validationErrors)) {
+          // Extract the first validation error message
+          const firstError = validationErrors[0]
+          if (firstError && firstError.msg) {
+            setError(firstError.msg)
+          } else {
+            setError('Validation failed')
+          }
+        } else if (typeof validationErrors === 'string') {
+          setError(validationErrors)
+        } else {
+          setError('Validation failed')
+        }
+      } else {
+        setError(err.response?.data?.message || err.message || 'Signup failed')
+      }
     } finally {
       setLoading(false)
     }

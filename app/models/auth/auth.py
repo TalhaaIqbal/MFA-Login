@@ -26,10 +26,9 @@ def _validate_password(v: str) -> str:
     return v
 
 
-# ── Auth request models ────────────────────────────────────────────────────────
+# ──Auth request models──
 
 class RegisterRequest(BaseModel):
-    """Sign-up payload: email, display name, and a strong password (≥ 8 chars)."""
 
     email: EmailStr
     name: str = Field(..., min_length=2, max_length=100)
@@ -57,9 +56,9 @@ class RegisterRequest(BaseModel):
     @field_validator("name")
     @classmethod
     def validate_name(cls, v: str) -> str:
-        if not re.match(r"^[a-zA-Z\s\-\'\.]+$", v):
+        if not re.match(r"^[a-zA-Z0-9\s\-\'\.]+$", v):
             raise ValueError(
-                "Name may only contain letters, spaces, hyphens, apostrophes, and periods"
+                "Name may only contain letters, numbers, spaces, hyphens, apostrophes, and periods"
             )
         return v.strip()
 
