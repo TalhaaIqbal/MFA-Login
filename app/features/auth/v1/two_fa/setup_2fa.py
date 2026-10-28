@@ -28,6 +28,14 @@ async def setup_2fa(user_id: str, email: str):
                 message="2FA is already enabled. Disable it first to set up a new authenticator."
             )
 
+        # Security: Prevent setup if email OTP is already enabled
+        if user.get("is_email_otp_enabled") is True:
+            logger.warning(f"Email OTP is already enabled for user: {user_id}. Disable it first to set up TOTP.")
+            return await core_response(
+                status_code=400,
+                message="Email OTP is already enabled. Disable it first to set up authenticator app 2FA."
+            )
+
         # Generate new secret
         secret = generate_totp_secret()
         qr_code = generate_qr_code(secret, email)

@@ -31,6 +31,14 @@ async def enable_2fa(user_id: str, code: str):
                 message="2FA is already enabled"
             )
 
+        # Guard check: if email OTP is already enabled
+        if user.get("is_email_otp_enabled") is True:
+            logger.warning(f"Email OTP is already enabled for user: {user_id}. Disable it first to enable TOTP.")
+            return await core_response(
+                status_code=400,
+                message="Email OTP is already enabled. Disable it first to enable authenticator app 2FA."
+            )
+
         # Decrypt the secret before verification
         try:
             decrypted_secret = decrypt_data(user["_2fa_secret"])

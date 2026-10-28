@@ -21,12 +21,13 @@ async def disable_2fa(user_id: str, password: str = None, totp_code: str = None)
                 message="User not found"
             )
 
-        # Guard check: if 2FA is already disabled
-        if user.get("is_2fa_enabled") is not True:
+        # Guard check: if 2FA is already disabled (both methods)
+        if user.get("is_2fa_enabled") is not True and user.get("is_email_otp_enabled") is not True:
             return await core_response(
                 status_code=400,
                 message="2FA is already disabled"
             )
+        
 
         # Step-up authentication: require either password OR TOTP code
         if not password and not totp_code:
@@ -61,10 +62,17 @@ async def disable_2fa(user_id: str, password: str = None, totp_code: str = None)
                     message="Invalid TOTP code"
                 )
 
-        # Disable 2FA
+        # Disable 2FA (both TOTP and email OTP)
+        unset_fields = {}
+        if user.get("is_2fa_enabled") is True:
+            unset_fields["is_2fa_enabled"] = 1
+            unset_fields["_2fa_secret"] = 1
+        if user.get("is_email_otp_enabled") is True:
+            unset_fields["is_email_otp_enabled"] = 1
+
         await users_collection.update_one(
             {"_id": ObjectId(user_id)},
-            {"$unset": {"is_2fa_enabled": 1, "_2fa_secret": 1}}
+            {"$unset": unset_fields}
         )
 
         logger.info(f"2FA disabled successfully for user {user_id} with step-up authentication")

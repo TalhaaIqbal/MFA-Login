@@ -27,6 +27,14 @@ async def enable_email_otp(user_id: str, code: str):
                 message="Email OTP is already enabled"
             )
 
+        # Guard check: if TOTP is already enabled
+        if user.get("is_2fa_enabled") is True:
+            logger.warning(f"TOTP 2FA is already enabled for user: {user_id}. Disable it first to enable email OTP.")
+            return await core_response(
+                status_code=400,
+                message="Authenticator app 2FA is already enabled. Disable it first to enable email OTP."
+            )
+
         # Verify the code
         if not verify_otp(user["email_otp"], code):
             logger.warning(f"Invalid email OTP for user ID: {user_id}")

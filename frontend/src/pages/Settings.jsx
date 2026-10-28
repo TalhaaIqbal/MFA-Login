@@ -7,7 +7,7 @@ import api from '../utils/api'
 import logger from '../utils/logger'
 
 function Settings() {
-  const { user, isAdmin } = useAuth()
+  const { user, isAdmin, refreshUser } = useAuth()
   const [is2FAEnabled, setIs2FAEnabled] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
   const [qrCodeData, setQrCodeData] = useState(null)
@@ -122,8 +122,17 @@ function Settings() {
   }
 
   const confirmDisable2FA = async () => {
-    if (!disablePassword && !disableTotpCode) {
+    // Determine which method is enabled
+    const isTotpEnabled = user?.is_2fa_enabled
+    const isEmailOtpEnabled = user?.is_email_otp_enabled
+
+    // Validation based on which method is enabled
+    if (isTotpEnabled && !disablePassword && !disableTotpCode) {
       setError('Please provide either your password or TOTP code to disable 2FA')
+      return
+    }
+    if (isEmailOtpEnabled && !disablePassword) {
+      setError('Please provide your password to disable email OTP')
       return
     }
 
@@ -132,15 +141,27 @@ function Settings() {
     setLoading(true)
 
     try {
-      await api.post('/auth/2fa/disable', {
-        password: disablePassword || undefined,
-        totp_code: disableTotpCode || undefined
-      })
+      // Call the appropriate endpoint based on which method is enabled
+      if (isTotpEnabled) {
+        await api.post('/auth/2fa/disable', {
+          password: disablePassword || undefined,
+          totp_code: disableTotpCode || undefined
+        })
+      } else if (isEmailOtpEnabled) {
+        await api.post('/auth/email-otp/disable', {
+          password: disablePassword
+        })
+      }
+
       setSuccess('2FA disabled successfully!')
       setIs2FAEnabled(false)
       setShowDisableModal(false)
       setDisablePassword('')
       setDisableTotpCode('')
+
+      // Refresh user data to get updated status
+      const updatedUser = await refreshUser()
+      setIs2FAEnabled(updatedUser.is_2fa_enabled || updatedUser.is_email_otp_enabled)
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to disable 2FA')
     } finally {
@@ -330,7 +351,9 @@ function Settings() {
                   <div className="mt-6 border-t border-gray-200 pt-6">
                     <h4 className="text-lg font-semibold text-gray-800 mb-4">Disable 2FA - Step-up Authentication Required</h4>
                     <p className="text-sm text-gray-600 mb-4">
-                      For your security, please re-authenticate to disable 2FA. Provide either your password or TOTP code.
+                      {user?.is_2fa_enabled
+                        ? 'For your security, please re-authenticate to disable authenticator app 2FA. Provide either your password or TOTP code.'
+                        : 'For your security, please re-authenticate to disable email OTP 2FA. Provide your password.'}
                     </p>
                     <div className="space-y-4">
                       <div>
@@ -345,24 +368,28 @@ function Settings() {
                           className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                         />
                       </div>
-                      <div className="text-center text-gray-500 text-sm">- OR -</div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          TOTP Code
-                        </label>
-                        <input
-                          type="text"
-                          value={disableTotpCode}
-                          onChange={(e) => setDisableTotpCode(e.target.value)}
-                          placeholder="6-digit code from authenticator app"
-                          maxLength={6}
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                        />
-                      </div>
+                      {user?.is_2fa_enabled && (
+                        <>
+                          <div className="text-center text-gray-500 text-sm">- OR -</div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              TOTP Code
+                            </label>
+                            <input
+                              type="text"
+                              value={disableTotpCode}
+                              onChange={(e) => setDisableTotpCode(e.target.value)}
+                              placeholder="6-digit code from authenticator app"
+                              maxLength={6}
+                              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                            />
+                          </div>
+                        </>
+                      )}
                       <div className="flex gap-2">
                         <button
                           onClick={confirmDisable2FA}
-                          disabled={loading || (!disablePassword && !disableTotpCode)}
+                          disabled={loading || (!disablePassword && (!user?.is_2fa_enabled || !disableTotpCode))}
                           className="flex-1 bg-red-500 text-white py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           {loading ? (
