@@ -34,9 +34,13 @@ class DisableMfaRequest(BaseModel):
 
 
 class DisableEmailOtpRequest(BaseModel):
-    """Turn off email OTP 2FA with password authentication."""
+    """Turn off email OTP 2FA.
 
-    password: str = Field(..., min_length=1)
+    Provide either password or email_otp_code for authentication.
+    """
+
+    password: Optional[str] = None
+    email_otp_code: Optional[str] = None
 
 
 class EmailOtpVerifyRequest(BaseModel):
