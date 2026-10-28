@@ -137,17 +137,17 @@ function Settings() {
   }
 
   const confirmDisable2FA = async () => {
-    // Determine which method is enabled
-    const isTotpEnabled = user?.is_2fa_enabled
-    const isEmailOtpEnabled = user?.is_email_otp_enabled
-
-    // Validation based on which method is enabled
-    if (isTotpEnabled && !disablePassword && !disableTotpCode) {
-      setError('Please provide either your password or TOTP code to disable 2FA')
+    // Validation based on selected method
+    if (disableAuthMethod === 'password' && !disablePassword) {
+      setError('Please enter your password')
       return
     }
-    if (isEmailOtpEnabled && !disablePassword && !disableEmailOtpCode) {
-      setError('Please provide either your password or email OTP code to disable email OTP')
+    if (disableAuthMethod === 'totp' && !disableTotpCode) {
+      setError('Please enter your TOTP code')
+      return
+    }
+    if (disableAuthMethod === 'email-otp' && !disableEmailOtpCode) {
+      setError('Please enter your email OTP code')
       return
     }
 
@@ -156,16 +156,25 @@ function Settings() {
     setLoading(true)
 
     try {
-      // Call the appropriate endpoint based on which method is enabled
-      if (isTotpEnabled) {
+      // Call the appropriate endpoint based on selected method
+      if (disableAuthMethod === 'password') {
+        // Send password to both endpoints (will work for either TOTP or email OTP)
+        if (user?.is_2fa_enabled) {
+          await api.post('/auth/2fa/disable', {
+            password: disablePassword
+          })
+        } else if (user?.is_email_otp_enabled) {
+          await api.post('/auth/email-otp/disable', {
+            password: disablePassword
+          })
+        }
+      } else if (disableAuthMethod === 'totp') {
         await api.post('/auth/2fa/disable', {
-          password: disablePassword || undefined,
-          totp_code: disableTotpCode || undefined
+          totp_code: disableTotpCode
         })
-      } else if (isEmailOtpEnabled) {
+      } else if (disableAuthMethod === 'email-otp') {
         await api.post('/auth/email-otp/disable', {
-          password: disablePassword || undefined,
-          email_otp_code: disableEmailOtpCode || undefined
+          email_otp_code: disableEmailOtpCode
         })
       }
 
