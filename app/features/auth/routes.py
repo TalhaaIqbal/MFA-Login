@@ -52,8 +52,8 @@ async def setup_2fa(request: Request, current_user: dict = Depends(get_current_u
 @router.post("/2fa/enable")
 @limiter.limit("10/minute")
 async def enable_2fa(request: Request, payload: TotpEnableRequest, current_user: dict = Depends(get_current_user)):
-    logger.info(f"enable_2fa route called - user_id: {current_user['id']}, code: {payload.code}, challenge_id: {payload.challenge_id}")
-    return await enable_2fa_api(current_user["id"], payload.code, payload.challenge_id)
+    logger.info(f"enable_2fa route called - user_id: {current_user['id']}, code: {payload.code}")
+    return await enable_2fa_api(current_user["id"], payload.code)
 
 
 @router.post("/2fa/disable")
@@ -83,7 +83,7 @@ async def setup_email_otp(request: Request, current_user: dict = Depends(get_cur
 @router.post("/email-otp/enable")
 @limiter.limit("10/minute")
 async def enable_email_otp(request: Request, payload: EmailOtpEnableRequest, current_user: dict = Depends(get_current_user)):
-    return await enable_email_otp_api(current_user["id"], payload.code, payload.challenge_id)
+    return await enable_email_otp_api(current_user["id"], payload.code)
 
 
 @router.post("/email-otp/disable")

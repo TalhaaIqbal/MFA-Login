@@ -8,7 +8,7 @@ async def setup_2fa_api(user_id: str, email: str):
     return await setup_2fa(user_id, email)
 
 
-async def enable_2fa_api(user_id: str, code: str, challenge_id: str = None):
+async def enable_2fa_api(user_id: str, code: str):
     return await enable_2fa(user_id, code)
 
 

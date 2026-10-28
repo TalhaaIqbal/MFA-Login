@@ -6,7 +6,7 @@ from bson import ObjectId
 from logging_config import logger
 
 
-async def enable_email_otp(user_id: str, code: str, challenge_id: str = None):
+async def enable_email_otp(user_id: str, code: str):
     """Enable email OTP 2FA after verifying the code"""
     try:
         db_conn = await get_db_conn()
