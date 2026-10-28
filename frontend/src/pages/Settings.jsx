@@ -129,6 +129,9 @@ function Settings() {
       setQrCodeData(null)
       setSelected2FAMethod('')
 
+      // Refresh user data to get updated 2FA status
+      await refreshUser()
+
       // Show toast and redirect to dashboard
       showToast('2FA enabled successfully!', 'success', 5000)
       navigate('/dashboard')
