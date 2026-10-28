@@ -20,6 +20,8 @@ function Settings() {
   const [disableTotpCode, setDisableTotpCode] = useState('')
   const [disableEmailOtpCode, setDisableEmailOtpCode] = useState('')
   const [sendingDisableOtp, setSendingDisableOtp] = useState(false)
+  const [otpCooldown, setOtpCooldown] = useState(0)
+  const [disableAuthMethod, setDisableAuthMethod] = useState('') // 'password' or 'otp'
   const [show2FASelection, setShow2FASelection] = useState(false)
   const [selected2FAMethod, setSelected2FAMethod] = useState('')
 
@@ -47,6 +49,17 @@ function Settings() {
       fetchConfig()
     }
   }, [user, isAdmin])
+
+  // OTP cooldown timer
+  useEffect(() => {
+    let interval
+    if (otpCooldown > 0) {
+      interval = setInterval(() => {
+        setOtpCooldown(prev => prev - 1)
+      }, 1000)
+    }
+    return () => clearInterval(interval)
+  }, [otpCooldown])
 
   const fetch2FAStatus = async () => {
     try {
@@ -179,6 +192,8 @@ function Settings() {
     setDisableTotpCode('')
     setDisableEmailOtpCode('')
     setError('')
+    setOtpCooldown(0)
+    setDisableAuthMethod('')
   }
 
   const sendDisableEmailOtp = async () => {
@@ -188,6 +203,7 @@ function Settings() {
     try {
       await api.post('/auth/email-otp/send-disable-code')
       setSuccess('Email OTP code sent successfully!')
+      setOtpCooldown(60) // 60 second cooldown
       setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send email OTP code')
@@ -370,90 +386,130 @@ function Settings() {
                 {showDisableModal && (
                   <div className="mt-6 border-t border-gray-200 pt-6">
                     <h4 className="text-lg font-semibold text-gray-800 mb-4">Disable 2FA - Step-up Authentication Required</h4>
-                    <p className="text-sm text-gray-600 mb-4">
-                      {user?.is_2fa_enabled
-                        ? 'For your security, please re-authenticate to disable authenticator app 2FA. Provide either your password or TOTP code.'
-                        : 'For your security, please re-authenticate to disable email OTP 2FA. Provide either your password or email OTP code.'}
-                    </p>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Password
-                        </label>
-                        <input
-                          type="password"
-                          value={disablePassword}
-                          onChange={(e) => setDisablePassword(e.target.value)}
-                          placeholder="Enter your password"
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                        />
-                      </div>
-                      {user?.is_2fa_enabled && (
-                        <>
-                          <div className="text-center text-gray-500 text-sm">- OR -</div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              TOTP Code
-                            </label>
-                            <input
-                              type="text"
-                              value={disableTotpCode}
-                              onChange={(e) => setDisableTotpCode(e.target.value)}
-                              placeholder="6-digit code from authenticator app"
-                              maxLength={6}
-                              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                            />
-                          </div>
-                        </>
-                      )}
-                      {user?.is_email_otp_enabled && (
-                        <>
-                          <div className="text-center text-gray-500 text-sm">- OR -</div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Email OTP Code
-                            </label>
-                            <div className="flex gap-2">
+                    {!disableAuthMethod ? (
+                      <>
+                        <p className="text-sm text-gray-600 mb-4">
+                          {user?.is_2fa_enabled
+                            ? 'Choose how you want to verify your identity to disable authenticator app 2FA.'
+                            : 'Choose how you want to verify your identity to disable email OTP 2FA.'}
+                        </p>
+                        <div className="space-y-3">
+                          <button
+                            onClick={() => setDisableAuthMethod('password')}
+                            className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left"
+                          >
+                            <div className="font-semibold text-gray-800">Use Password</div>
+                            <div className="text-sm text-gray-600">Enter your account password</div>
+                          </button>
+                          {user?.is_2fa_enabled && (
+                            <button
+                              onClick={() => setDisableAuthMethod('totp')}
+                              className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left"
+                            >
+                              <div className="font-semibold text-gray-800">Use TOTP Code</div>
+                              <div className="text-sm text-gray-600">Enter 6-digit code from authenticator app</div>
+                            </button>
+                          )}
+                          {user?.is_email_otp_enabled && (
+                            <button
+                              onClick={() => setDisableAuthMethod('email-otp')}
+                              className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left"
+                            >
+                              <div className="font-semibold text-gray-800">Use Email OTP Code</div>
+                              <div className="text-sm text-gray-600">Enter 6-digit code sent to your email</div>
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setDisableAuthMethod('')}
+                          className="text-sm text-gray-600 hover:text-gray-800 mb-4"
+                        >
+                          ← Back to method selection
+                        </button>
+                        <div className="space-y-4">
+                          {disableAuthMethod === 'password' && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Password
+                              </label>
+                              <input
+                                type="password"
+                                value={disablePassword}
+                                onChange={(e) => setDisablePassword(e.target.value)}
+                                placeholder="Enter your password"
+                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                              />
+                            </div>
+                          )}
+                          {disableAuthMethod === 'totp' && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                TOTP Code
+                              </label>
                               <input
                                 type="text"
-                                value={disableEmailOtpCode}
-                                onChange={(e) => setDisableEmailOtpCode(e.target.value)}
-                                placeholder="6-digit code from your email"
+                                value={disableTotpCode}
+                                onChange={(e) => setDisableTotpCode(e.target.value)}
+                                placeholder="6-digit code from authenticator app"
                                 maxLength={6}
-                                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                               />
-                              <button
-                                onClick={sendDisableEmailOtp}
-                                disabled={sendingDisableOtp}
-                                className="px-4 py-3 bg-emerald-500 text-white rounded-lg font-semibold hover:bg-emerald-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
-                              >
-                                {sendingDisableOtp ? 'Sending...' : 'Send Code'}
-                              </button>
                             </div>
+                          )}
+                          {disableAuthMethod === 'email-otp' && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Email OTP Code
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={disableEmailOtpCode}
+                                  onChange={(e) => setDisableEmailOtpCode(e.target.value)}
+                                  placeholder="6-digit code from your email"
+                                  maxLength={6}
+                                  className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                                />
+                                <button
+                                  onClick={sendDisableEmailOtp}
+                                  disabled={sendingDisableOtp || otpCooldown > 0}
+                                  className="px-4 py-3 bg-emerald-500 text-white rounded-lg font-semibold hover:bg-emerald-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
+                                >
+                                  {sendingDisableOtp ? 'Sending...' : otpCooldown > 0 ? `Resend (${otpCooldown}s)` : 'Send Code'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={confirmDisable2FA}
+                              disabled={loading || (
+                                (disableAuthMethod === 'password' && !disablePassword) ||
+                                (disableAuthMethod === 'totp' && !disableTotpCode) ||
+                                (disableAuthMethod === 'email-otp' && !disableEmailOtpCode)
+                              )}
+                              className="flex-1 bg-red-500 text-white py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                              {loading ? (
+                                <div className="flex items-center justify-center">
+                                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                  <span className="ml-2">Disabling...</span>
+                                </div>
+                              ) : 'Disable 2FA'}
+                            </button>
+                            <button
+                              onClick={cancelDisable2FA}
+                              className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                            >
+                              Cancel
+                            </button>
                           </div>
-                        </>
-                      )}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={confirmDisable2FA}
-                          disabled={loading || (!disablePassword && !disableTotpCode && !disableEmailOtpCode)}
-                          className="flex-1 bg-red-500 text-white py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                          {loading ? (
-                            <div className="flex items-center justify-center">
-                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                              <span className="ml-2">Disabling...</span>
-                            </div>
-                          ) : 'Disable 2FA'}
-                        </button>
-                        <button
-                          onClick={cancelDisable2FA}
-                          className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
