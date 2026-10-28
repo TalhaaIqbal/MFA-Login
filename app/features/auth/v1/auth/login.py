@@ -104,6 +104,7 @@ async def login(payload: LoginRequest):
                     "full_name": user.get("full_name"),
                     "role": user.get("role"),
                     "is_2fa_enabled": user.get("is_2fa_enabled", False),
+                    "is_email_otp_enabled": user.get("is_email_otp_enabled", False),
                 },
             }
         )

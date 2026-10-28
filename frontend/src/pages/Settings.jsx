@@ -33,8 +33,9 @@ function Settings() {
 
   useEffect(() => {
     // Initialize 2FA status from user data if available
-    if (user && user.is_2fa_enabled !== undefined) {
-      setIs2FAEnabled(user.is_2fa_enabled)
+    if (user && (user.is_2fa_enabled !== undefined || user.is_email_otp_enabled !== undefined)) {
+      // 2FA is enabled if either authenticator or email OTP is enabled
+      setIs2FAEnabled(user.is_2fa_enabled || user.is_email_otp_enabled)
     } else {
       // Fetch from API if not available
       fetch2FAStatus()
@@ -48,7 +49,8 @@ function Settings() {
   const fetch2FAStatus = async () => {
     try {
       const response = await api.get('/auth/me')
-      setIs2FAEnabled(response.data.data.is_2fa_enabled || false)
+      // 2FA is enabled if either authenticator or email OTP is enabled
+      setIs2FAEnabled(response.data.data.is_2fa_enabled || response.data.data.is_email_otp_enabled)
     } catch (err) {
       logger.error('Error fetching 2FA status:', err)
     }
