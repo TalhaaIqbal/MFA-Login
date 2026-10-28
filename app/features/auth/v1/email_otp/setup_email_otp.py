@@ -4,6 +4,7 @@ from utils.core_response import core_response
 from utils.email_otp import generate_otp, send_email_otp
 from bson import ObjectId
 from logging_config import logger
+from time import time
 
 
 async def setup_email_otp(user_id: str, email: str):
@@ -38,13 +39,14 @@ async def setup_email_otp(user_id: str, email: str):
         # Generate OTP
         otp = generate_otp()
 
-        # Send OTP to email
-        await send_email_otp(email, otp)
+        # Send OTP to email with 2-minute expiry
+        await send_email_otp(email, otp, expiry_minutes=2)
 
-        # Store OTP in user document (not enabled yet)
+        # Store OTP and expiry timestamp (2 minutes) in user document (not enabled yet)
+        expiry_time = int(time()) + 120  # 2 minutes = 120 seconds
         await users_collection.update_one(
             {"_id": ObjectId(user_id)},
-            {"$set": {"email_otp": otp}}
+            {"$set": {"email_otp": otp, "email_otp_expiry": expiry_time}}
         )
 
         logger.info(f"Email OTP setup initiated for user {user_id}")

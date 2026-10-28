@@ -7,6 +7,7 @@ from utils.jwt_tokens import verify_temp_token
 from bson import ObjectId
 from logging_config import logger
 from utils.cookies import set_session_cookie
+from time import time
 
 
 async def verify_email_otp_login(temp_token: str, code: str):
@@ -44,6 +45,15 @@ async def verify_email_otp_login(temp_token: str, code: str):
                 message="No OTP found. Please request a new one."
             )
 
+        # Check if OTP has expired (2 minutes)
+        email_otp_expiry = user.get("email_otp_expiry")
+        if email_otp_expiry and time() > email_otp_expiry:
+            logger.warning(f"Expired email OTP code for login attempt by user {user_id}")
+            return await core_response(
+                status_code=400,
+                message="Email OTP code has expired. Please request a new code."
+            )
+
         # Verify email OTP code
         if not verify_otp(stored_otp, code):
             logger.warning(f"Invalid email OTP for user ID: {user_id}")
@@ -55,7 +65,7 @@ async def verify_email_otp_login(temp_token: str, code: str):
         # Clear OTP from user document
         await users_collection.update_one(
             {"_id": ObjectId(user_id)},
-            {"$unset": {"email_otp": ""}}
+            {"$unset": {"email_otp": 1, "email_otp_expiry": 1}}
         )
 
         # Create session

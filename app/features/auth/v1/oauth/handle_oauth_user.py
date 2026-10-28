@@ -93,12 +93,13 @@ async def handle_oauth_user(email: str, name: str, provider: str, provider_id: s
         # Generate and send email OTP
         from utils.email_otp import generate_otp, send_email_otp
         otp = generate_otp()
-        await send_email_otp(user.get("email"), otp)
+        await send_email_otp(user.get("email"), otp, expiry_minutes=2)
 
-        # Store OTP in user document
+        # Store OTP and expiry timestamp (2 minutes) in user document
+        expiry_time = int(time()) + 120  # 2 minutes = 120 seconds
         await users_collection.update_one(
             {"_id": user.get("_id")},
-            {"$set": {"email_otp": otp}}
+            {"$set": {"email_otp": otp, "email_otp_expiry": expiry_time}}
         )
 
         # Create JWT token for email OTP verification

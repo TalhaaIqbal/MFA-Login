@@ -4,6 +4,7 @@ from utils.core_response import core_response
 from utils.email_otp import verify_otp
 from bson import ObjectId
 from logging_config import logger
+from time import time
 
 
 async def enable_email_otp(user_id: str, code: str):
@@ -35,6 +36,15 @@ async def enable_email_otp(user_id: str, code: str):
                 message="Authenticator app 2FA is already enabled. Disable it first to enable email OTP."
             )
 
+        # Check if OTP has expired (2 minutes)
+        email_otp_expiry = user.get("email_otp_expiry")
+        if email_otp_expiry and time() > email_otp_expiry:
+            logger.warning(f"Expired email OTP code for enable attempt by user {user_id}")
+            return await core_response(
+                status_code=400,
+                message="Email OTP code has expired. Please request a new code."
+            )
+
         # Verify the code
         if not verify_otp(user["email_otp"], code):
             logger.warning(f"Invalid email OTP for user ID: {user_id}")
@@ -43,10 +53,10 @@ async def enable_email_otp(user_id: str, code: str):
                 message="Invalid verification code"
             )
 
-        # Enable email OTP
+        # Enable email OTP and clear OTP data
         await users_collection.update_one(
             {"_id": ObjectId(user_id)},
-            {"$set": {"is_email_otp_enabled": True}}
+            {"$set": {"is_email_otp_enabled": True}, "$unset": {"email_otp": 1, "email_otp_expiry": 1}}
         )
 
         logger.info(f"Email OTP enabled successfully for user {user_id}")

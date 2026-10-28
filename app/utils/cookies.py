@@ -12,7 +12,7 @@ def _opts() -> dict:
 
 
 def set_session_cookie(response, session_id: str):
-    response.set_cookie(COOKIE_NAME, session_id, max_age=MAX_AGE, **_opts())
+    response.set_cookie(COOKIE_NAME, session_id, **_opts())
     return response
 
 
