@@ -19,10 +19,14 @@ def _login_error(code: str):
     return Response(status_code=302, headers={"Location": f"{FRONTEND_URL}/login?error={code}"})
 
 
-async def oauth_login_api(provider: str, request: Request):
+async def oauth_login_api(provider: str, request: Request, prompt: str = None):
     validate_provider(provider)
     client = get_oauth_client(provider)
     redirect_uri = REDIRECT_URIS[provider] or str(request.url_for("oauth_callback", provider=provider))
+
+    # Add prompt parameter if provided (e.g., "login" to force account selection)
+    if prompt:
+        return await client.authorize_redirect(request, redirect_uri, prompt=prompt)
     return await client.authorize_redirect(request, redirect_uri)
 
 

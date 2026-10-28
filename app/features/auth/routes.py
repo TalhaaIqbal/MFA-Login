@@ -106,8 +106,8 @@ async def verify_email_otp(request: Request, payload: EmailOtpVerifyRequest):
 
 @router.get("/oauth/{provider}")
 @limiter.limit("30/minute")
-async def oauth_login(provider: str, request: Request):
-    return await oauth_login_api(provider, request)
+async def oauth_login(provider: str, request: Request, prompt: str = None):
+    return await oauth_login_api(provider, request, prompt)
 
 
 @router.get("/oauth/{provider}/callback")
