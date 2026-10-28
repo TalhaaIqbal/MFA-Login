@@ -56,57 +56,5 @@ class LoginRequest(BaseModel):
     password: str
 
 
-class VerifyEmailRequest(BaseModel):
-    token: str = Field(..., min_length=1)
-
-
-class PasswordResetRequest(BaseModel):
-    email: EmailStr
-
-
-
-class PasswordResetConfirm(BaseModel):
-    """Step 2 of password reset – supply the reset token and the new password."""
-
-    token: str = Field(..., min_length=1)
-    new_password: str = Field(..., min_length=8, max_length=128)
-
-    @field_validator("new_password")
-    @classmethod
-    def validate_new_password(cls, v: str) -> str:
-        return _validate_password(v)
-
-
-
-class ChangePasswordRequest(BaseModel):
-    """Authenticated user changing their own password."""
-
-    current_password: str
-    new_password: str = Field(..., min_length=8, max_length=128)
-
-    @field_validator("new_password")
-    @classmethod
-    def validate_new_password(cls, v: str) -> str:
-        return _validate_password(v)
-    
-    
-
-class ReauthRequest(BaseModel):
-    """Re-authentication gate before sensitive actions.
-
-    Either *password* or *mfa_code* must be supplied.
-    """
-
-    password: Optional[str] = None
-    mfa_code: Optional[str] = None
-
-    @field_validator("mfa_code")
-    @classmethod
-    def validate_either_provided(cls, v: Optional[str], info) -> Optional[str]:
-        if not v and not info.data.get("password"):
-            raise ValueError("Either password or mfa_code must be provided")
-        return v
-
-
 class SetSessionCookieRequest(BaseModel):
     session_id: str = Field(..., min_length=1)

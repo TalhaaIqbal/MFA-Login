@@ -15,14 +15,12 @@ class TotpEnableRequest(BaseModel):
     """Confirm TOTP setup by supplying the 6-digit code from the authenticator app."""
 
     code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
-    challenge_id: Optional[str] = None
 
 
 class EmailOtpEnableRequest(BaseModel):
     """Confirm email OTP setup by supplying the 6-digit code sent to email."""
 
     code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
-    challenge_id: Optional[str] = None
 
 
 class DisableMfaRequest(BaseModel):
