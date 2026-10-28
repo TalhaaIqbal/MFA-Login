@@ -65,3 +65,6 @@ COOKIE_SECURE: bool = ENVIRONMENT == "production"
 COOKIE_SAMESITE: str = environ.get("COOKIE_SAMESITE", "none" if COOKIE_SECURE else "lax")
 COOKIE_DOMAIN: str = environ.get("COOKIE_DOMAIN", "")
 COOKIE_PARTITIONED: bool = ENVIRONMENT == "production"
+
+# Session max age in seconds (default: 2 hours), also used for cookie max age
+MAX_AGE: int = int(environ.get("MAX_AGE", "7200"))  # 2 hours in seconds (default)

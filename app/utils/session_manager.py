@@ -1,9 +1,11 @@
 import secrets
 from datetime import datetime, timezone, timedelta
+from time import time
 from bson import ObjectId
 from db.db import get_db_conn
 from db.collection import DBCollection
 from logging_config import logger
+from config import MAX_AGE
 
 
 async def create_session(user_id: str, expires_delta: timedelta | None = None) -> str:
@@ -15,17 +17,18 @@ async def create_session(user_id: str, expires_delta: timedelta | None = None) -
         # Generate secure random session ID
         session_id = secrets.token_urlsafe(32)
 
-        # Set expiration time
+        # Set expiration time as Unix timestamp in milliseconds (use MAX_AGE by default)
         if expires_delta:
-            expires_at = datetime.now(timezone.utc) + expires_delta
+            expires_at = int((datetime.now(timezone.utc) + expires_delta).timestamp() * 1000)
         else:
-            expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+            # Use MAX_AGE from config (in seconds, convert to milliseconds)
+            expires_at = int(time() * 1000) + (MAX_AGE * 1000)
 
         # Store session in database
         await sessions_collection.insert_one({
             "session_id": session_id,
             "user_id": ObjectId(user_id),
-            "created_at": datetime.now(timezone.utc),
+            "created_at": int(time() * 1000),
             "expires_at": expires_at,
             "revoked": False
         })
@@ -59,13 +62,11 @@ async def verify_session(session_id: str) -> dict | None:
             logger.warning(f"Session revoked: {session_id}")
             return None
 
-        # Check if session is expired
+        # Check if session is expired (using Unix timestamp in milliseconds)
         expires_at = session.get("expires_at")
         if expires_at:
-            # Ensure expires_at is timezone-aware
-            if expires_at.tzinfo is None:
-                expires_at = expires_at.replace(tzinfo=timezone.utc)
-            if expires_at < datetime.now(timezone.utc):
+            current_time = int(time() * 1000)
+            if expires_at < current_time:
                 logger.warning(f"Session expired: {session_id}")
                 # Clean up expired session
                 await sessions_collection.delete_one({"session_id": session_id})
@@ -105,7 +106,7 @@ async def revoke_session(session_id: str) -> bool:
 
         result = await sessions_collection.update_one(
             {"session_id": session_id, "revoked": False},
-            {"$set": {"revoked": True, "revoked_at": datetime.now(timezone.utc)}}
+            {"$set": {"revoked": True, "revoked_at": int(time() * 1000)}}
         )
 
         if result.modified_count > 0:
@@ -125,7 +126,7 @@ async def revoke_all_user_sessions(user_id: str) -> int:
 
         result = await sessions_collection.update_many(
             {"user_id": ObjectId(user_id), "revoked": False},
-            {"$set": {"revoked": True, "revoked_at": datetime.now(timezone.utc)}}
+            {"$set": {"revoked": True, "revoked_at": int(time() * 1000)}}
         )
 
         logger.info(f"Revoked {result.modified_count} sessions for user_id={user_id}")
@@ -141,7 +142,7 @@ async def cleanup_expired_sessions():
         db_conn = await get_db_conn()
         sessions_collection = DBCollection.AUTH_SESSIONS(db_conn)
 
-        now = datetime.now(timezone.utc)
+        now = int(time() * 1000)
         result = await sessions_collection.delete_many({
             "expires_at": {"$lt": now}
         })
