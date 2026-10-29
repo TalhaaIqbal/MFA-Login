@@ -20,14 +20,13 @@ from logging_config import logger
 async def lifespan(app: FastAPI):
     # Startup
     await init_db()
-    # Initialize OAuth
+
     init_oauth(app)
 
-    # Setup scheduler for periodic cleanup
     scheduler = AsyncIOScheduler()
     scheduler.start()
 
-    # Schedule cleanup of expired pending email verifications every 6 hours
+    # cleanup of expired pending email verifications every 6 hours
     scheduler.add_job(
         cleanup_expired_pending_verifications,
         'interval',

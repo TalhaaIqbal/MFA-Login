@@ -2,15 +2,15 @@ from fastapi import HTTPException
 
 
 async def extract_user_info(provider: str, client, token):
-    if provider == "google":
-        # Fetch userinfo from Google's endpoint
-        userinfo = await client.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
-        info = userinfo.json()
-        if not info.get("email_verified", True):
-            raise HTTPException(status_code=400, detail="Google email not verified")
-        email, name, provider_id = info.get("email"), info.get("name"), info.get("sub")
+    # if provider == "google":
+    #     # Fetch userinfo from Google's endpoint
+    #     userinfo = await client.get("https://www.googleapis.com/oauth2/v3/userinfo", token=token)
+    #     info = userinfo.json()
+    #     if not info.get("email_verified", True):
+    #         raise HTTPException(status_code=400, detail="Google email not verified")
+    #     email, name, provider_id = info.get("email"), info.get("name"), info.get("sub")
 
-    elif provider == "github":
+    if provider == "github":
         user = (await client.get("user", token=token)).json()
         emails = (await client.get("user/emails", token=token)).json()
         name = user.get("name") or user.get("login")
@@ -38,7 +38,8 @@ async def extract_user_info(provider: str, client, token):
 
     elif provider == "microsoft":
         me = (await client.get("me", token=token)).json()
-        email = me.get("mail") or me.get("userPrincipalName")
+        # Prefer userPrincipalName (which is usually the login email) over mail
+        email = me.get("userPrincipalName") or me.get("mail")
         name = me.get("displayName")
         provider_id = me.get("id")
 

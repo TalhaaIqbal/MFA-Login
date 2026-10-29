@@ -11,6 +11,8 @@ async def handle_oauth_user(email: str, name: str, provider: str, provider_id: s
     db_conn = await get_db_conn()
     users_collection = DBCollection.USERS(db_conn)
 
+    logger.info(f"OAuth login attempt - Email: {email}, Provider: {provider}, Provider ID: {provider_id}")
+
     # Check if user exists with this OAuth provider
     user = await users_collection.find_one({
         "oauth_providers": {
@@ -24,6 +26,7 @@ async def handle_oauth_user(email: str, name: str, provider: str, provider_id: s
     if user:
         # Existing user via OAuth - login
         user_id = str(user.get("_id"))
+
         # Update last used timestamp
         await users_collection.update_one(
             {"_id": ObjectId(user_id), "oauth_providers.provider": provider},
