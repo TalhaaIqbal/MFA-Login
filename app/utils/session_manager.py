@@ -79,7 +79,7 @@ async def verify_session(session_id: str) -> dict | None:
         user_id = session.get("user_id")
         user_doc = await users_collection.find_one(
             {"_id": user_id},
-            {"email": 1, "full_name": 1, "role": 1, "is_2fa_enabled": 1, "is_email_otp_enabled": 1}
+            {"email": 1, "full_name": 1, "role": 1, "is_2fa_enabled": 1, "is_email_otp_enabled": 1, "is_email_verified": 1}
         )
 
         if not user_doc:
@@ -93,6 +93,7 @@ async def verify_session(session_id: str) -> dict | None:
             "role": user_doc.get("role", "user"),
             "is_2fa_enabled": user_doc.get("is_2fa_enabled", False),
             "is_email_otp_enabled": user_doc.get("is_email_otp_enabled", False),
+            "is_email_verified": user_doc.get("is_email_verified", True),
         }
     except Exception as e:
         logger.error(f"Error verifying session: {e}")

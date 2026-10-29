@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends, Response
+from fastapi import APIRouter, Request, Depends, Response, Query
 
 from models.auth.auth import LoginRequest, RegisterRequest, SetSessionCookieRequest
 from models.auth.mfa import TotpEnableRequest, DisableMfaRequest, MfaVerifyRequest, EmailOtpEnableRequest, DisableEmailOtpRequest, EmailOtpVerifyRequest
@@ -7,6 +7,7 @@ from features.auth.v1.two_factor import disable_2fa_api, enable_2fa_api, setup_2
 from features.auth.v1.auth.logout import logout_api
 from features.auth.v1.oauth_apis import oauth_login_api, oauth_callback_api
 from features.auth.v1.email_otp_apis import setup_email_otp_api, enable_email_otp_api, disable_email_otp_api, send_disable_email_otp_api, verify_email_otp_api
+from features.auth.v1.auth.email_verification import verify_email
 from middlewares.limiter import limiter
 from utils.get_current_user import get_current_user
 from utils.core_response import core_response
@@ -25,6 +26,12 @@ async def auth(request: Request, payload: LoginRequest):
 @limiter.limit("30/minute")
 async def signup_route(request: Request, payload: RegisterRequest):
     return await signup_api(payload)
+
+
+@router.get("/verify-email")
+@limiter.limit("30/minute")
+async def verify_email_route(request: Request, token: str = Query(...)):
+    return await verify_email(token)
 
 
 @router.get("/me")

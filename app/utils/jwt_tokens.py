@@ -35,3 +35,36 @@ def verify_temp_token(token: str, token_type: str) -> dict | None:
     except jwt.InvalidTokenError as e:
         logger.warning(f"Invalid temp token: {e}")
         return None
+
+
+def create_email_verification_token(email: str, expires_in_hours: int = 24) -> str:
+    """Create a JWT token for email verification"""
+    try:
+        payload = {
+            "email": email,
+            "type": "email_verification",
+            "exp": datetime.now(timezone.utc) + timedelta(hours=expires_in_hours),
+            "iat": datetime.now(timezone.utc)
+        }
+        token = jwt.encode(payload, ENCRYPTION_KEY, algorithm="HS256")
+        logger.info(f"Created email verification token for {email}")
+        return token
+    except Exception as e:
+        logger.error(f"Error creating email verification token: {e}")
+        raise
+
+
+def verify_email_verification_token(token: str) -> dict | None:
+    """Verify an email verification token and return email"""
+    try:
+        payload = jwt.decode(token, ENCRYPTION_KEY, algorithms=["HS256"])
+        if payload.get("type") != "email_verification":
+            logger.warning(f"Invalid token type: {payload.get('type')} != email_verification")
+            return None
+        return {"email": payload.get("email")}
+    except jwt.ExpiredSignatureError:
+        logger.warning("Email verification token expired")
+        return None
+    except jwt.InvalidTokenError as e:
+        logger.warning(f"Invalid email verification token: {e}")
+        return None

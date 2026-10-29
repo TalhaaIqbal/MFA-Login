@@ -16,14 +16,25 @@ async def login(payload: LoginRequest):
         db_conn = await get_db_conn()
         users_collection = DBCollection.USERS(db_conn)
 
-        logger.info(f"Login attempt for email: {redact_email(payload.email)}")
+        # Normalize email to lowercase
+        email = payload.email.lower()
 
-        user = await users_collection.find_one({"email": payload.email})
+        logger.info(f"Login attempt for email: {redact_email(email)}")
+
+        user = await users_collection.find_one({"email": email})
         if not user:
-            logger.warning(f"User not found: {redact_email(payload.email)}")
+            logger.warning(f"User not found: {redact_email(email)}")
             return await core_response(
                 status_code=401,
                 message="Invalid email or password"
+            )
+
+        # Check if email is verified
+        if not user.get("is_email_verified", True):
+            logger.warning(f"Email not verified for: {redact_email(email)}")
+            return await core_response(
+                status_code=403,
+                message="Please verify your email before logging in"
             )
 
         if not user.get("password") or not verify_password(payload.password, user["password"]):
@@ -59,14 +70,16 @@ async def login(payload: LoginRequest):
             )
 
         if is_email_otp_enabled:
-            # Generate and send email OTP
+            # Generate and send email OTP with 2-minute expiry
             otp = generate_otp()
-            await send_email_otp(user.get("email"), otp)
+            await send_email_otp(user.get("email"), otp, expiry_minutes=2)
 
-            # Store OTP in user document
+            # Store OTP and expiry timestamp (2 minutes) in user document
+            from time import time
+            expiry_time = int(time()) + 120  # 2 minutes = 120 seconds
             await users_collection.update_one(
                 {"_id": user.get("_id")},
-                {"$set": {"email_otp": otp}}
+                {"$set": {"email_otp": otp, "email_otp_expiry": expiry_time}}
             )
 
             # Create JWT token for email OTP verification

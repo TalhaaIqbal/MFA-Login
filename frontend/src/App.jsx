@@ -10,6 +10,7 @@ import Settings from './pages/Settings'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import NotFound from './pages/NotFound'
 import OAuthCallback from './pages/OAuthCallback'
+import VerifyEmail from './pages/VerifyEmail'
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
               }
             />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/oauth/callback" element={<OAuthCallback />} />
             <Route
               path="/dashboard"

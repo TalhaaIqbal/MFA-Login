@@ -11,6 +11,7 @@ function Signup() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const { login } = useAuth()
@@ -52,13 +53,14 @@ function Signup() {
     try {
       const response = await api.post('/auth/signup', { email, name, password, confirm_password: confirmPassword }, { withCredentials: true })
 
-      if (response.data.data && response.data.data.user_details) {
-        // Auto-login after successful signup
-        login(response.data.data.user_details)
-        navigate('/dashboard', { replace: true })
-      } else {
-        throw new Error('Invalid response from server')
-      }
+      // Email verification flow - show success message
+      setSuccess('Verification email sent! Please check your inbox to complete signup.')
+      setError('')
+      // Clear form
+      setEmail('')
+      setName('')
+      setPassword('')
+      setConfirmPassword('')
     } catch (err) {
       console.log('Signup error:', err)
       console.log('Error response:', err.response)
@@ -85,6 +87,7 @@ function Signup() {
       } else {
         setError(err.response?.data?.message || err.message || 'Signup failed')
       }
+      setSuccess('')
     } finally {
       setLoading(false)
     }
@@ -101,6 +104,12 @@ function Signup() {
       <div className="bg-white rounded-xl p-10 w-full max-w-md shadow-2xl">
         <h1 className="text-3xl font-semibold text-gray-800 mb-2">Create Account</h1>
         <p className="text-gray-500 text-sm mb-8">Sign up to get started</p>
+
+        {success && (
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 px-4 py-3 rounded-lg text-sm mb-6">
+            {success}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
