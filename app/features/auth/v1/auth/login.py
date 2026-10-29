@@ -29,14 +29,6 @@ async def login(payload: LoginRequest):
                 message="Invalid email or password"
             )
 
-        # Check if email is verified
-        if not user.get("is_email_verified", True):
-            logger.warning(f"Email not verified for: {redact_email(email)}")
-            return await core_response(
-                status_code=403,
-                message="Please verify your email before logging in"
-            )
-
         if not user.get("password") or not verify_password(payload.password, user["password"]):
             logger.warning(f"Invalid password for email: {redact_email(payload.email)}")
             return await core_response(

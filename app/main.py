@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from starlette.middleware.sessions import SessionMiddleware
 from db.db import init_db, close_db_conn
 from contextlib import asynccontextmanager
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from middlewares.cors import add_cors_middleware
 from slowapi.errors import RateLimitExceeded
@@ -9,8 +10,10 @@ from slowapi import _rate_limit_exceeded_handler
 from middlewares.limiter import add_slowapi_middleware, limiter
 from utils.oauth import oauth, init_oauth
 
+from features.auth.v1.auth.email_verification import cleanup_expired_pending_verifications
 from routers.routers import api_router
 from config import ENABLE_DOCS, SESSION_SECRET, COOKIE_SECURE, COOKIE_SAMESITE
+from logging_config import logger
 
 
 @asynccontextmanager
@@ -20,9 +23,28 @@ async def lifespan(app: FastAPI):
     # Initialize OAuth
     init_oauth(app)
 
+    # Setup scheduler for periodic cleanup
+    scheduler = AsyncIOScheduler()
+    scheduler.start()
+
+    # Schedule cleanup of expired pending email verifications every 6 hours
+    scheduler.add_job(
+        cleanup_expired_pending_verifications,
+        'interval',
+        hours=6,
+        id='cleanup_expired_pending_verifications',
+        replace_existing=True
+    )
+    logger.info("Scheduled periodic cleanup of expired pending email verifications (every 6 hours)")
+
+    app.state.scheduler = scheduler
+
     yield
 
     # Shutdown
+    if scheduler.running:
+        scheduler.shutdown()
+        logger.info("Scheduler shutdown complete")
     await close_db_conn()
 
 

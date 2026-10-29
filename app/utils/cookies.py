@@ -1,7 +1,6 @@
-from config import COOKIE_SECURE, COOKIE_SAMESITE, COOKIE_DOMAIN, MAX_AGE
+from config import COOKIE_SECURE, COOKIE_SAMESITE, COOKIE_DOMAIN
 
 COOKIE_NAME = "session_id"
-MAX_AGE = MAX_AGE
 
 
 def _opts() -> dict:

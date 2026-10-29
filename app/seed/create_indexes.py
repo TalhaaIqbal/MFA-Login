@@ -52,6 +52,35 @@ async def create_all_indexes():
     except Exception as e:
         logger.error(f"Error creating users indexes: {e}")
 
+    # PENDING_EMAIL_VERIFICATIONS COLLECTION
+    pending_collection = DBCollection.PENDING_EMAIL_VERIFICATIONS(db)
+    try:
+        # Unique index on email - prevents duplicate pending verifications
+        await pending_collection.create_index(
+            [("email", 1)],
+            name="pending_email_unique_idx",
+            unique=True
+        )
+        logger.info("Created unique index on pending_email_verifications.email")
+
+        # TTL index for automatic cleanup of expired verifications (24 hours)
+        await pending_collection.create_index(
+            [("verification_token_expires_at", 1)],
+            name="pending_verification_ttl_idx",
+            expireAfterSeconds=0
+        )
+        logger.info("Created TTL index on pending_email_verifications.verification_token_expires_at")
+
+        # Index for cleanup queries
+        await pending_collection.create_index(
+            [("created_at", 1)],
+            name="pending_created_at_idx"
+        )
+        logger.info("Created index on pending_email_verifications.created_at")
+
+    except Exception as e:
+        logger.error(f"Error creating pending_email_verifications indexes: {e}")
+
     logger.info("All indexes created successfully")
 
 

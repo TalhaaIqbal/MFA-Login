@@ -8,6 +8,7 @@ from pymongo.asynchronous.database import (
 class DBCollection(Enum):
     USERS = "users"
     AUTH_SESSIONS = "auth_sessions"
+    PENDING_EMAIL_VERIFICATIONS = "pending_email_verifications"
 
 
     def __call__(self, db_conn: AsyncDatabase) -> AsyncCollection:
