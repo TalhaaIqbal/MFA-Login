@@ -9,7 +9,7 @@ from features.auth.v1.oauth.handle_oauth_user import handle_oauth_user
 from features.auth.v1.oauth.set_oauth_cookie import set_oauth_cookie
 
 REDIRECT_URIS = {
-    # "google": GOOGLE_REDIRECT_URI,
+    "google": GOOGLE_REDIRECT_URI,
     "github": GITHUB_REDIRECT_URI,
     "microsoft": MICROSOFT_REDIRECT_URI,
 }
