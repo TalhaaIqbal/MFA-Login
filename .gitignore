@@ -1,4 +1,6 @@
 # Environment & Secrets
+.env
+.env.local
 .env.*.local
 *.pem
 *.key
@@ -47,6 +49,7 @@ Desktop.ini
 *.sln
 *.swp
 *.swo
+.vscode/
 *.sublime-workspace
 *.sublime-project
 
@@ -59,4 +62,3 @@ __pycache__/
 .pytest_cache/
 .coverage
 .copilot-specs-cache/
-config.bat
